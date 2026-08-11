@@ -24,20 +24,29 @@ import java.time.format.DateTimeFormatter
 import java.net.CookieManager
 import java.net.CookiePolicy
 
-class DSBMobileAPI(private val username: String, private val password: String) {
-    private val TAG = "DSBMobileAPI"
-    private val LOGIN_URL = "https://www.dsbmobile.de/Login.aspx"
-    private val WEB_API_URL = "https://www.dsbmobile.de/jhw-1fd98248-440c-4283-bef6-dc82fe769b61.ashx/GetData"
-
+object DSBNetwork {
     private val cookieManager = CookieManager().apply {
         setCookiePolicy(CookiePolicy.ACCEPT_ALL)
     }
-    
-    private val client = OkHttpClient.Builder()
-        .cookieJar(JavaNetCookieJar(cookieManager))
-        .connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
-        .readTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
-        .build()
+
+    val client: OkHttpClient by lazy {
+        OkHttpClient.Builder()
+            .cookieJar(JavaNetCookieJar(cookieManager))
+            .connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
+            .retryOnConnectionFailure(true)
+            .build()
+    }
+
+    var loggedIn: Boolean = false
+}
+
+class DSBMobileAPI(private val username: String, private val password: String, private val baseUrl: String = "") {
+    private val TAG = "DSBMobileAPI"
+    private val LOGIN_URL = if (baseUrl.isNotEmpty()) "$baseUrl/Login.aspx" else "https://www.dsbmobile.de/Login.aspx"
+    private val WEB_API_URL = if (baseUrl.isNotEmpty()) "$baseUrl/jhw-1fd98248-440c-4283-bef6-dc82fe769b61.ashx/GetData" else "https://www.dsbmobile.de/jhw-1fd98248-440c-4283-bef6-dc82fe769b61.ashx/GetData"
+
+    private val client = DSBNetwork.client
 
     private suspend fun webLogin(): Boolean = withContext(Dispatchers.IO) {
         try {
@@ -73,13 +82,24 @@ class DSBMobileAPI(private val username: String, private val password: String) {
             return@withContext responseUrl.contains("default.aspx") || responseText.contains("<title>DSBmobile</title>")
         } catch (e: Exception) {
             Log.e(TAG, "Web login error", e)
-            false
+            throw e
         }
     }
 
     private suspend fun callWebApi(): JSONObject? = withContext(Dispatchers.IO) {
-        if (!webLogin()) return@withContext null
+        var result = if (DSBNetwork.loggedIn) webApiCall() else null
+        if (result == null) {
+            if (!webLogin()) {
+                DSBNetwork.loggedIn = false
+                return@withContext null
+            }
+            result = webApiCall()
+        }
+        DSBNetwork.loggedIn = result != null
+        result
+    }
 
+    private suspend fun webApiCall(): JSONObject? {
         val now = ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"))
         val payload = JSONObject().apply {
             put("UserId", username)
@@ -108,27 +128,27 @@ class DSBMobileAPI(private val username: String, private val password: String) {
         val request = Request.Builder()
             .url(WEB_API_URL)
             .post(bodyObj.toString().toRequestBody("application/json; charset=utf-8".toMediaType()))
-            .header("Referer", "https://www.dsbmobile.de/default.aspx")
+            .header("Referer", if (baseUrl.isNotEmpty()) "$baseUrl/default.aspx" else "https://www.dsbmobile.de/default.aspx")
             .build()
 
         try {
             val response = client.newCall(request).execute()
-            val responseJson = JSONObject(response.body?.string() ?: return@withContext null)
+            val responseJson = JSONObject(response.body?.string() ?: return null)
             val respData = responseJson.optString("d", "")
-            if (respData.isEmpty()) return@withContext null
+            if (respData.isEmpty()) return null
 
             val decoded = decompress(Base64.decode(respData, Base64.DEFAULT))
             val data = JSONObject(String(decoded))
 
             if (data.optInt("Resultcode", -1) != 0) {
                 Log.e(TAG, "Web API error: ${data.optString("ResultStatusInfo")}")
-                return@withContext null
+                return null
             }
 
-            data
+            return data
         } catch (e: Exception) {
             Log.e(TAG, "Web API call failed", e)
-            null
+            throw e
         }
     }
 

@@ -62,6 +62,7 @@ dependencies {
     implementation(libs.androidx.glance.appwidget)
     implementation(libs.androidx.glance.material3)
     implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.nanohttpd)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -36,6 +37,10 @@ class DataStoreManager(private val context: Context) {
         val AUTO_FETCH_ENABLED = booleanPreferencesKey("auto_fetch_enabled")
         val AUTO_FETCH_INTERVAL = intPreferencesKey("auto_fetch_interval")
         val NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
+        val CUSTOM_SERVER_URL = stringPreferencesKey("custom_server_url")
+        val CACHED_ENTRIES = stringPreferencesKey("cached_entries")
+        val LAST_UPDATED = longPreferencesKey("last_updated")
+        val WEB_SERVER_ENABLED = booleanPreferencesKey("web_server_enabled")
     }
 
     val usernameFlow: Flow<String?> = context.dataStore.data.map { it[USERNAME] }
@@ -46,18 +51,22 @@ class DataStoreManager(private val context: Context) {
     val sortPeriodFlow: Flow<Boolean> = context.dataStore.data.map { it[SORT_PERIOD] ?: true }
     val archiveFlow: Flow<String?> = context.dataStore.data.map { it[ARCHIVE] }
     val themeIndexFlow: Flow<Int> = context.dataStore.data.map { it[THEME_INDEX] ?: 0 }
-    val navHiddenFlow: Flow<Boolean> = context.dataStore.data.map { it[NAV_HIDDEN] ?: false }
+    val navHiddenFlow: Flow<Boolean> = context.dataStore.data.map { it[NAV_HIDDEN] ?: true }
     val selectedClassesFlow: Flow<String?> = context.dataStore.data.map { it[SELECTED_CLASSES] }
-    val useCustomFontFlow: Flow<Boolean> = context.dataStore.data.map { it[USE_CUSTOM_FONT] ?: false }
+    val useCustomFontFlow: Flow<Boolean> = context.dataStore.data.map { it[USE_CUSTOM_FONT] ?: true }
     val fontWeightFlow: Flow<Float> = context.dataStore.data.map { it[FONT_WEIGHT] ?: 400f }
     val fontWidthFlow: Flow<Float> = context.dataStore.data.map { it[FONT_WIDTH] ?: 100f }
     val fontOpszFlow: Flow<Float> = context.dataStore.data.map { it[FONT_OPSZ] ?: 14f }
     val fontSlntFlow: Flow<Float> = context.dataStore.data.map { it[FONT_SLNT] ?: 0f }
     val fontGradFlow: Flow<Float> = context.dataStore.data.map { it[FONT_GRAD] ?: 0f }
-    val fontRondFlow: Flow<Float> = context.dataStore.data.map { it[FONT_ROND] ?: 0f }
+    val fontRondFlow: Flow<Float> = context.dataStore.data.map { it[FONT_ROND] ?: 100f }
     val autoFetchEnabledFlow: Flow<Boolean> = context.dataStore.data.map { it[AUTO_FETCH_ENABLED] ?: false }
     val autoFetchIntervalFlow: Flow<Int> = context.dataStore.data.map { it[AUTO_FETCH_INTERVAL] ?: 30 }
-    val notificationsEnabledFlow: Flow<Boolean> = context.dataStore.data.map { it[NOTIFICATIONS_ENABLED] ?: true }
+    val notificationsEnabledFlow: Flow<Boolean> = context.dataStore.data.map { it[NOTIFICATIONS_ENABLED] ?: false }
+    val customServerUrlFlow: Flow<String?> = context.dataStore.data.map { it[CUSTOM_SERVER_URL] }
+    val cachedEntriesFlow: Flow<String?> = context.dataStore.data.map { it[CACHED_ENTRIES] }
+    val lastUpdatedFlow: Flow<Long> = context.dataStore.data.map { it[LAST_UPDATED] ?: 0L }
+    val webServerEnabledFlow: Flow<Boolean> = context.dataStore.data.map { it[WEB_SERVER_ENABLED] ?: false }
 
     suspend fun saveCredentials(username: String, password: String, className: String) {
         context.dataStore.edit { settings ->
@@ -133,6 +142,25 @@ class DataStoreManager(private val context: Context) {
 
     suspend fun saveNotificationsEnabled(enabled: Boolean) {
         context.dataStore.edit { it[NOTIFICATIONS_ENABLED] = enabled }
+    }
+
+    suspend fun saveCustomServerUrl(url: String) {
+        context.dataStore.edit { settings ->
+            if (url.isBlank()) settings.remove(CUSTOM_SERVER_URL)
+            else settings[CUSTOM_SERVER_URL] = url
+        }
+    }
+
+    suspend fun saveCachedEntries(json: String) {
+        context.dataStore.edit { it[CACHED_ENTRIES] = json }
+    }
+
+    suspend fun saveLastUpdated(timestamp: Long) {
+        context.dataStore.edit { it[LAST_UPDATED] = timestamp }
+    }
+
+    suspend fun saveWebServerEnabled(enabled: Boolean) {
+        context.dataStore.edit { it[WEB_SERVER_ENABLED] = enabled }
     }
 
     suspend fun clearCredentials() {

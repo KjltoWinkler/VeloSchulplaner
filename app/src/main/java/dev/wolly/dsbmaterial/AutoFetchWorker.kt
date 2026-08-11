@@ -36,8 +36,10 @@ class AutoFetchWorker(
             } catch (_: Exception) { 0 }
         } else 0
 
+        val customServerUrl = dataStoreManager.customServerUrlFlow.first() ?: ""
+
         return try {
-            val api = DSBMobileAPI(username, password)
+            val api = DSBMobileAPI(username, password, customServerUrl.trimEnd('/'))
             val allRaw = api.getSubstitutions("")
 
             val allClassNames = mutableSetOf(className)

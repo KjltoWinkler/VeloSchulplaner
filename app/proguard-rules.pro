@@ -37,3 +37,10 @@
 # AndroidX
 -keep class androidx.lifecycle.** { *; }
 -keep class androidx.datastore.** { *; }
+
+# Room instantiates generated *_Impl database classes reflectively at runtime.
+# Room 2.6.1's own rule only keeps the class, not its constructor, so R8 full
+# mode (AGP 9) strips the no-arg <init> and crashes WorkManager at startup.
+-keepclassmembers class * extends androidx.room.RoomDatabase {
+    <init>();
+}

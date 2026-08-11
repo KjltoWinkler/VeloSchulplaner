@@ -1,6 +1,8 @@
 <resources>
     <string name="app_name">DSBmaterial</string>
     <string name="title_main">DSB Material</string>
+    <string name="label_home">Start</string>
+    <string name="label_plans">Pläne</string>
     <string name="title_settings">Einstellungen</string>
     <string name="title_login">DSBmobile Login</string>
     <string name="title_select_class">Klasse auswählen</string>
@@ -18,6 +20,9 @@
     
     <string name="label_username">Benutzername</string>
     <string name="label_password">Passwort</string>
+    <string name="label_profile">Profil</string>
+    <string name="action_show_password">Passwort anzeigen</string>
+    <string name="action_hide_password">Passwort verbergen</string>
     <string name="label_manual_class">Manuelle Eingabe (z.B. 10a)</string>
     <string name="label_show_all_classes">Alle Klassen anzeigen</string>
     <string name="label_preferences">Präferenzen</string>
@@ -39,7 +44,8 @@
     <string name="desc_dynamic_color">Farben deines Hintergrundbildes nutzen (Android 12+)</string>
     <string name="desc_sort_period">Ordnet Vertretungen chronologisch</string>
     <string name="desc_about">Version 1.4.1 • Entwickelt von WollyDev24</string>
-    
+
+    <string name="action_apply">Anwenden</string>
     <string name="msg_no_substitutions">Keine Vertretungen gefunden.</string>
     <string name="msg_no_classes">Keine Klassen gefunden. Überprüfe deine Zugangsdaten.</string>
     <string name="msg_login_failed">Anmeldung fehlgeschlagen</string>
@@ -96,18 +102,55 @@
     <string name="format_interval">%1$d Minuten</string>
     <string name="label_calendar">Kalender</string>
     <string name="desc_calendar">Vergangene Vertretungen nach Datum durchsuchen</string>
-    <string name="label_statistics">Statistiken</string>
-    <string name="desc_statistics">Vertretungsstatistiken und Trends anzeigen</string>
-    <string name="stats_total_entries">Einträge gesamt</string>
-    <string name="stats_total_days">Tage gesamt</string>
-    <string name="stats_most_cancelled">Am häufigsten betroffenes Fach</string>
-    <string name="stats_busiest_lesson">Beliebteste Stunde</string>
-    <string name="stats_subjects">Eindeutige Fächer</string>
-    <string name="stats_rooms">Eindeutige Räume</string>
-    <string name="stats_classes">Erfasste Klassen</string>
-    <string name="stats_type_breakdown">Typenaufschlüsselung</string>
-    <string name="label_no_stats">Keine Daten vorhanden</string>
     <string name="label_no_calendar_data">Keine archivierten Einträge</string>
     <string name="action_open_calendar">Kalender öffnen</string>
-    <string name="action_open_stats">Statistiken öffnen</string>
+    <string name="action_clear_archive">Archiv leeren</string>
+    <string name="action_remove_entry">Eintrag entfernen</string>
+    <string name="label_custom_server">Eigener Server</string>
+    <string name="desc_custom_server">Mit einem eigenen DSB-API-Testserver verbinden</string>
+    <string name="label_server">Server</string>
+    <string name="action_save">Speichern</string>
+    <string name="action_reset">Zurücksetzen</string>
+    <string name="label_floating_nav">Schwebende Navigationsleiste</string>
+    <string name="desc_floating_nav">Eine schwebende Pille statt der unteren Navigationsleiste anzeigen</string>
+    <string name="action_clear_filter">Filter löschen</string>
+    <string name="action_remove_class">Klasse entfernen</string>
+
+    <string name="home_no_entries">Noch keine Vertretungen verfügbar</string>
+    <string name="home_retry">Wiederholen</string>
+    <string name="home_last_updated">Zuletzt aktualisiert %1$s</string>
+    <string name="home_offline">Offline</string>
+
+    <string name="label_share_card">Karte teilen</string>
+    <string name="label_preview">Vorschau</string>
+    <string name="label_colors">Farben</string>
+    <string name="label_font">Schriftart</string>
+    <string name="label_preset">Voreinstellung</string>
+    <string name="label_material_you">Material You</string>
+    <string name="label_default_font">Standard</string>
+    <string name="label_sans_flex">Google Sans Flex</string>
+    <string name="action_share_image">Bild teilen</string>
+    <string name="action_share_text">Als Text teilen</string>
+    <string name="share_card_footer">Vertretungsplan</string>
+    <string name="label_demo_mode">Demo Modus</string>
+    <string name="label_theme_picker">Theme Farbe</string>
+    <string name="desc_theme_picker">Wähle eine eigene Farbe</string>
+    <string name="theme_green">Wald Grün</string>
+    <string name="theme_blue">Ozean Blau</string>
+    <string name="theme_purple">Lila</string>
+    <string name="theme_red">Orange</string>
+    <string name="theme_orange">Berren Pink</string>
+    <string name="label_selected">Ausgewählt</string>
+    <string name="label_accent_color">Aktzent Farbe</string>
+    <string name="msg_delete_title">Eintrag löschen?</string>
+    <string name="msg_delete_confirm">Dieser Eintrag wird aus dem Archiv entfernt. Das kann nicht rückgängig gemacht werden.</string>
+    <string name="action_delete">Löschen</string>
+    <string name="action_cancel">Abbrechen</string>
+    <string name="label_webserver">Webserver</string>
+    <string name="desc_webserver">Vertretungsplan im lokalen Netzwerk bereitstellen</string>
+    <string name="desc_webserver_running">Läuft — Adresse auf jedem Gerät im gleichen Netzwerk öffnen</string>
+    <string name="desc_webserver_urls">Eine dieser Adressen in einem Browser öffnen:</string>
+    <string name="desc_webserver_note">Der Server stoppt, wenn die App geschlossen wird.</string>
+    <string name="msg_webserver_no_url">Keine Netzwerkadresse gefunden — Verbindung prüfen.</string>
+    <string name="action_copy_url">URL kopieren</string>
 </resources>

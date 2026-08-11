@@ -1,12 +1,14 @@
 package dev.wolly.dsbmaterial.ui
 
 import android.app.Application
+import android.os.SystemClock
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import dev.wolly.dsbmaterial.AutoFetchWorker
 import dev.wolly.dsbmaterial.DSBWidget
+import dev.wolly.dsbmaterial.LocalWebServer
 import dev.wolly.dsbmaterial.api.DSBMobileAPI
 import dev.wolly.dsbmaterial.data.DataStoreManager
 import dev.wolly.dsbmaterial.data.SubstitutionEntry
@@ -29,20 +31,6 @@ sealed class UiState {
     data class SelectingClass(val classes: List<String>, val u: String, val p: String) : UiState()
 }
 
-@Stable
-data class StatsData(
-    val totalEntries: Int = 0,
-    val totalDays: Int = 0,
-    val mostCancelledSubject: String = "",
-    val mostCancelledCount: Int = 0,
-    val typeBreakdown: List<Pair<String, Int>> = emptyList(),
-    val busiestLesson: String = "",
-    val busiestLessonCount: Int = 0,
-    val classCount: Int = 0,
-    val subjectCount: Int = 0,
-    val roomCount: Int = 0
-)
-
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val dataStoreManager = DataStoreManager(application)
     private val gson = Gson()
@@ -55,6 +43,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing
+
+    private val _lastUpdated = MutableStateFlow<Long?>(null)
+    val lastUpdated: StateFlow<Long?> = _lastUpdated
+
+    private val _isOffline = MutableStateFlow(false)
+    val isOffline: StateFlow<Boolean> = _isOffline
 
     val isRoomFirst: StateFlow<Boolean> = dataStoreManager.swapDataFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
@@ -69,10 +63,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     val navHidden: StateFlow<Boolean> = dataStoreManager.navHiddenFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
     val useCustomFont: StateFlow<Boolean> = dataStoreManager.useCustomFontFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
     val fontWeight: StateFlow<Float> = dataStoreManager.fontWeightFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 400f)
@@ -90,7 +84,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0f)
 
     val fontRond: StateFlow<Float> = dataStoreManager.fontRondFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0f)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 100f)
+
+    val username: StateFlow<String?> = dataStoreManager.usernameFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    val password: StateFlow<String?> = dataStoreManager.passwordFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     private val _archive = MutableStateFlow<List<SubstitutionEntry>>(emptyList())
     val archive: StateFlow<List<SubstitutionEntry>> = _archive
@@ -105,19 +105,85 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 30)
 
     val notificationsEnabled: StateFlow<Boolean> = dataStoreManager.notificationsEnabledFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    private val _customServerUrl = MutableStateFlow<String?>(null)
+    val customServerUrl: StateFlow<String?> = _customServerUrl
+
+    private val _webServerEnabled = MutableStateFlow(false)
+    val webServerEnabled: StateFlow<Boolean> = _webServerEnabled
+
+    private val _webServerUrls = MutableStateFlow<List<String>>(emptyList())
+    val webServerUrls: StateFlow<List<String>> = _webServerUrls
 
     private val _selectedCalendarDay = MutableStateFlow<String?>(null)
     val selectedCalendarDay: StateFlow<String?> = _selectedCalendarDay
 
     private var lastSuccessEntries: List<SubstitutionEntry> = emptyList()
     private var isDemoMode = false
+    private var appOpenTime = 0L
+    private val minLoadingDurationMs = 1800L
+
+    private suspend fun ensureLoadingFeel() {
+        val elapsed = SystemClock.elapsedRealtime() - appOpenTime
+        val remaining = minLoadingDurationMs - elapsed
+        if (remaining > 0) delay(remaining)
+    }
 
     init {
+        appOpenTime = SystemClock.elapsedRealtime()
+        viewModelScope.launch {
+            _customServerUrl.value = dataStoreManager.customServerUrlFlow.first()
+        }
+        viewModelScope.launch {
+            val enabled = dataStoreManager.webServerEnabledFlow.first()
+            _webServerEnabled.value = enabled
+            if (enabled && LocalWebServer.start(getApplication())) {
+                _webServerUrls.value = LocalWebServer.urls.value
+            }
+        }
+        viewModelScope.launch {
+            LocalWebServer.urls.collect { _webServerUrls.value = it }
+        }
         checkCredentialsAndFetch()
         loadArchive()
         loadSelectedClasses()
+        loadCachedSnapshot()
         scheduleAutoFetchOnStartup()
+    }
+
+    private fun loadCachedSnapshot() {
+        viewModelScope.launch {
+            val timestamp = dataStoreManager.lastUpdatedFlow.first()
+            if (timestamp > 0L) {
+                _lastUpdated.value = timestamp
+            }
+            val cached = loadCachedEntries()
+            if (cached != null && (_uiState.value == UiState.Idle || _uiState.value is UiState.Loading)) {
+                ensureLoadingFeel()
+                if (_uiState.value is UiState.Loading) {
+                    lastSuccessEntries = cached
+                    _uiState.value = UiState.Success(sortEntries(cached))
+                }
+            }
+        }
+    }
+
+    private suspend fun loadCachedEntries(): List<SubstitutionEntry>? {
+        val json = dataStoreManager.cachedEntriesFlow.first() ?: return null
+        if (json.isNullOrEmpty()) return null
+        val type = object : TypeToken<List<SubstitutionEntry>>() {}.type
+        val entries: List<SubstitutionEntry> = gson.fromJson(json, type)
+        return entries.takeIf { it.isNotEmpty() }
+    }
+
+    private suspend fun saveCache(entries: List<SubstitutionEntry>) {
+        if (entries.isEmpty()) return
+        dataStoreManager.saveCachedEntries(gson.toJson(entries))
+        val now = System.currentTimeMillis()
+        dataStoreManager.saveLastUpdated(now)
+        _lastUpdated.value = now
+        _isOffline.value = false
     }
 
     private fun loadArchive() {
@@ -126,7 +192,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 if (!json.isNullOrEmpty()) {
                     val type = object : TypeToken<List<SubstitutionEntry>>() {}.type
                     val entries: List<SubstitutionEntry> = gson.fromJson(json, type)
-                    _archive.value = sortArchive(entries)
+                    val sorted = sortArchive(entries)
+                    _archive.value = sorted
+                    LocalWebServer.setEntries(sorted, _lastUpdated.value ?: 0L)
                 }
             }
         }
@@ -197,6 +265,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun removeFromArchive(entries: List<SubstitutionEntry>) {
+        viewModelScope.launch {
+            val newArchive = _archive.value.filter { it !in entries }
+            _archive.value = newArchive
+            dataStoreManager.saveArchive(gson.toJson(newArchive))
+            updateWidget()
+        }
+    }
+
     fun clearArchive() {
         viewModelScope.launch {
             _archive.value = emptyList()
@@ -224,6 +301,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun setThemeIndex(index: Int) {
         viewModelScope.launch {
             dataStoreManager.saveThemeIndex(index)
+            LocalWebServer.setSettings(isRoomFirst.value, sortByPeriod.value, index, dynamicColor.value)
             updateWidget()
         }
     }
@@ -231,6 +309,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun toggleColumnOrder() {
         viewModelScope.launch {
             dataStoreManager.saveSwapPreference(!isRoomFirst.value)
+            LocalWebServer.setSettings(!isRoomFirst.value, sortByPeriod.value, themeIndex.value, dynamicColor.value)
             updateWidget()
         }
     }
@@ -238,6 +317,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun toggleDynamicColor() {
         viewModelScope.launch {
             dataStoreManager.saveDynamicColorPreference(!dynamicColor.value)
+            LocalWebServer.setSettings(isRoomFirst.value, sortByPeriod.value, themeIndex.value, !dynamicColor.value)
             updateWidget()
         }
     }
@@ -301,6 +381,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun setNotificationsEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            dataStoreManager.saveNotificationsEnabled(enabled)
+        }
+    }
+
     private fun scheduleAutoFetch(enabled: Boolean, intervalMinutes: Int) {
         val workManager = WorkManager.getInstance(getApplication())
         workManager.cancelUniqueWork(AutoFetchWorker.WORK_NAME)
@@ -342,49 +428,26 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             .sortedBy { parseDaySortKey(it.first) }
     }
 
-    fun getStatsData(): StatsData {
-        val entries = _archive.value
-        if (entries.isEmpty()) return StatsData()
-
-        val totalEntries = entries.size
-        val entriesByDay = entries.groupBy { it.day }
-        val totalDays = entriesByDay.size
-
-        val entriesBySubject = entries.groupBy { it.subject }
-        val mostCancelledSubject = entriesBySubject.maxByOrNull { it.value.size }?.key ?: ""
-        val mostCancelledCount = entriesBySubject.maxOfOrNull { it.value.size } ?: 0
-
-        val entriesByType = entries.groupBy { it.art }
-        val typeBreakdown = entriesByType.map { (type, list) -> type to list.size }
-            .sortedByDescending { it.second }
-
-        val entriesByLesson = entries.groupBy { it.lesson }
-        val busiestLesson = entriesByLesson.maxByOrNull { it.value.size }?.key ?: ""
-        val busiestLessonCount = entriesByLesson.maxOfOrNull { it.value.size } ?: 0
-
-        val entriesByClass = entries.groupBy { it.className }
-        val entriesByRoom = entries.groupBy { it.room }
-
-        return StatsData(
-            totalEntries = totalEntries,
-            totalDays = totalDays,
-            mostCancelledSubject = mostCancelledSubject,
-            mostCancelledCount = mostCancelledCount,
-            typeBreakdown = typeBreakdown,
-            busiestLesson = busiestLesson,
-            busiestLessonCount = busiestLessonCount,
-            classCount = entriesByClass.size,
-            subjectCount = entriesBySubject.size,
-            roomCount = entriesByRoom.size
-        )
-    }
-
     fun toggleSortByPeriod() {
         viewModelScope.launch {
             dataStoreManager.saveSortPreference(!sortByPeriod.value)
+            LocalWebServer.setSettings(isRoomFirst.value, !sortByPeriod.value, themeIndex.value, dynamicColor.value)
             if (_uiState.value is UiState.Success) {
                 _uiState.value = UiState.Success(sortEntries(lastSuccessEntries))
             }
+        }
+    }
+
+    fun toggleWebServer() {
+        viewModelScope.launch {
+            val newValue = !_webServerEnabled.value
+            val started = if (newValue) LocalWebServer.start(getApplication()) else {
+                LocalWebServer.stop()
+                true
+            }
+            _webServerEnabled.value = newValue && started
+            _webServerUrls.value = LocalWebServer.urls.value
+            dataStoreManager.saveWebServerEnabled(_webServerEnabled.value)
         }
     }
 
@@ -410,7 +473,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun openSettings() {
-        _selectedTab.value = 2
+        _selectedTab.value = 3
     }
 
     fun closeSettings() {
@@ -492,14 +555,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private suspend fun fetchClasses(u: String, p: String) {
         _uiState.value = UiState.Loading
         try {
-            val api = DSBMobileAPI(u, p)
+            val api = DSBMobileAPI(u, p, resolveBaseUrl())
             val classes = api.getAvailableClasses()
+            ensureLoadingFeel()
             if (classes.isEmpty()) {
                 _uiState.value = UiState.Error("No classes found. Check your credentials.")
             } else {
                 _uiState.value = UiState.SelectingClass(classes, u, p)
             }
         } catch (e: Exception) {
+            ensureLoadingFeel()
             _uiState.value = UiState.Error(e.message ?: "Login failed")
         }
     }
@@ -518,9 +583,30 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
     
+    fun setCustomServerUrl(url: String) {
+        _customServerUrl.value = url.ifBlank { null }
+        viewModelScope.launch {
+            dataStoreManager.saveCustomServerUrl(url)
+        }
+    }
+
+    private suspend fun resolveBaseUrl(): String {
+        var url = _customServerUrl.value
+        if (url == null) {
+            url = dataStoreManager.customServerUrlFlow.first()
+            _customServerUrl.value = url
+        }
+        return if (url.isNullOrBlank()) "" else url.trimEnd('/')
+    }
+
     fun logout() {
         viewModelScope.launch {
             dataStoreManager.clearCredentials()
+            dataStoreManager.saveCachedEntries("")
+            dataStoreManager.saveLastUpdated(0L)
+            _lastUpdated.value = null
+            _isOffline.value = false
+            lastSuccessEntries = emptyList()
             _uiState.value = UiState.NeedsLogin
             _selectedTab.value = 0
             _selectedClasses.value = emptyList()
@@ -536,7 +622,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
             _isRefreshing.value = true
             try {
-                val api = DSBMobileAPI(username, password)
+                val api = DSBMobileAPI(username, password, resolveBaseUrl())
                 val allRaw = api.getSubstitutions("")
 
                 val filtered = if (className.isEmpty() && _selectedClasses.value.isEmpty()) {
@@ -553,9 +639,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 val deduped = filtered.distinctBy { it.day + it.lesson + it.subject + it.room + it.art + it.text }
                 lastSuccessEntries = deduped
                 _uiState.value = UiState.Success(sortEntries(deduped))
+                saveCache(deduped)
                 archiveSubstitutions(deduped)
             } catch (e: Exception) {
-                _uiState.value = UiState.Error(e.message ?: "Unknown error")
+                fallBackToCache(e.message ?: "Unknown error")
             } finally {
                 _isRefreshing.value = false
             }
@@ -563,9 +650,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private suspend fun fetchData(u: String, p: String, c: String) {
-        _uiState.value = UiState.Loading
+        if (_uiState.value !is UiState.Success) _uiState.value = UiState.Loading
+        _isRefreshing.value = true
         try {
-            val api = DSBMobileAPI(u, p)
+            val api = DSBMobileAPI(u, p, resolveBaseUrl())
             val allRaw = api.getSubstitutions("")
 
             val filtered = if (c.isEmpty() && _selectedClasses.value.isEmpty()) {
@@ -580,11 +668,28 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
 
             val deduped = filtered.distinctBy { it.day + it.lesson + it.subject + it.room + it.art + it.text }
+            saveCache(deduped)
+            archiveSubstitutions(deduped)
+            ensureLoadingFeel()
             lastSuccessEntries = deduped
             _uiState.value = UiState.Success(sortEntries(deduped))
-            archiveSubstitutions(deduped)
         } catch (e: Exception) {
-            _uiState.value = UiState.Error(e.message ?: "Unknown error")
+            ensureLoadingFeel()
+            fallBackToCache(e.message ?: "Unknown error")
+        } finally {
+            _isRefreshing.value = false
+        }
+    }
+
+    private suspend fun fallBackToCache(message: String) {
+        val cached = loadCachedEntries()
+        if (cached != null) {
+            _isOffline.value = true
+            lastSuccessEntries = cached
+            _uiState.value = UiState.Success(sortEntries(cached))
+        } else {
+            _isOffline.value = false
+            _uiState.value = UiState.Error(message)
         }
     }
 
@@ -594,5 +699,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         return entries.sortedWith(
             byDay.thenBy { it.lesson.filter { c -> c.isDigit() }.toIntOrNull() ?: 999 }
         )
+    }
+
+    override fun onCleared() {
+        LocalWebServer.stop()
+        super.onCleared()
     }
 }

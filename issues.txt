@@ -1,0 +1,9 @@
+- Continue button in login screen works without entering valid credentials
+- Longer words in Archive get splitted badly (decrease text size a little)
+- All Icons should need an dynmic fixed On/Off color when using Dynamic Color
+- Settings text in Nav Bar get's cut off when using German Language
+- Some Type Values also get cut off (decrase text size of them)
+- No Animation/Confirmation when deleting entries from Archive
+- Back button in class selection doesn't work 
+- Arrow in Custom Server entry shpould rotate to show expanding of the menu (also should auto scroll down to see the section)
+

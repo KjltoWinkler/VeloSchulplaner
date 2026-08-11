@@ -17,8 +17,10 @@ import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
+import androidx.glance.ColorFilter
 import androidx.glance.color.ColorProvider
 import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
@@ -37,6 +39,9 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import dev.wolly.dsbmaterial.data.DataStoreManager
 import dev.wolly.dsbmaterial.data.SubstitutionEntry
+import dev.wolly.dsbmaterial.ui.screens.groupSubstitutions
+import dev.wolly.dsbmaterial.ui.screens.mergedGroupEntry
+import dev.wolly.dsbmaterial.ui.screens.mergedPeriodLabel
 import dev.wolly.dsbmaterial.ui.theme.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -53,8 +58,11 @@ private data class WidgetColors(
 )
 
 private fun computeThemeColors(context: Context, themeIndex: Int, dynamicColor: Boolean): WidgetColors {
+    val isDark = (context.resources.configuration.uiMode and
+        android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+        android.content.res.Configuration.UI_MODE_NIGHT_YES
     if (dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        val scheme = dynamicDarkColorScheme(context)
+        val scheme = if (isDark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         return WidgetColors(
             primary = scheme.primary,
             background = scheme.background,
@@ -65,14 +73,14 @@ private fun computeThemeColors(context: Context, themeIndex: Int, dynamicColor: 
         )
     }
 
-    val preset = themePresets.getOrElse(themeIndex) { themePresets[0] }
+    val scheme = SeedPalettes.getOrElse(themeIndex) { SeedPalettes[0] }.scheme(dark = isDark)
     return WidgetColors(
-        primary = preset.primary,
-        background = preset.background,
-        surface = preset.surface,
-        headerBg = preset.surfaceVariant,
-        onSurface = preset.onSurface,
-        onSurfaceVariant = preset.onSurfaceVariant
+        primary = scheme.primary,
+        background = scheme.background,
+        surface = scheme.surface,
+        headerBg = scheme.surfaceVariant,
+        onSurface = scheme.onSurface,
+        onSurfaceVariant = scheme.onSurfaceVariant
     )
 }
 
@@ -219,6 +227,7 @@ private fun WidgetContent(
     val periodW = 45.dp
     val roomW = 60.dp
     val typeW = 95.dp
+    val showClass = entries.map { it.className }.filter { it.isNotEmpty() }.distinct().size > 1
 
     Box(
         modifier = GlanceModifier
@@ -236,6 +245,7 @@ private fun WidgetContent(
                 Image(
                     provider = ImageProvider(R.drawable.ic_widget_calendar),
                     contentDescription = null,
+                    colorFilter = ColorFilter.tint(ColorProvider(day = colors.primary, night = colors.primary)),
                     modifier = GlanceModifier.size(24.dp).padding(top = 4.dp)
                 )
                 Spacer(modifier = GlanceModifier.width(8.dp))
@@ -250,7 +260,7 @@ private fun WidgetContent(
                 Spacer(modifier = GlanceModifier.defaultWeight())
                 if (entries.isNotEmpty()) {
                     Text(
-                        text = "${entries.size}",
+                        text = "${groupSubstitutions(entries).size}",
                         style = TextStyle(
                             fontSize = countSize,
                             color = secondaryTextColor
@@ -278,8 +288,9 @@ private fun WidgetContent(
 
                 Spacer(modifier = GlanceModifier.height(spacerHeader))
 
-                val displayEntries = entries.take(6)
-                displayEntries.forEach { entry ->
+                val displayGroups = groupSubstitutions(entries).take(6)
+                displayGroups.forEach { group ->
+                    val entry = mergedGroupEntry(group)
                     val roomDisplay = if (isRoomFirst) entry.room else entry.art
                     val typeDisplay = if (isRoomFirst) entry.art else entry.room
 
@@ -291,8 +302,22 @@ private fun WidgetContent(
                             .padding(vertical = entryPadV, horizontal = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(text = entry.lesson, style = TextStyle(fontSize = entrySize, fontWeight = FontWeight.Bold, color = textColor), modifier = GlanceModifier.width(periodW))
-                        Text(text = entry.subject, style = TextStyle(fontSize = entrySize, fontWeight = FontWeight.Bold, color = primaryTextColor), modifier = GlanceModifier.defaultWeight())
+                        Text(text = mergedPeriodLabel(group), style = TextStyle(fontSize = entrySize, fontWeight = FontWeight.Bold, color = textColor), modifier = GlanceModifier.width(periodW))
+                        Row(modifier = GlanceModifier.defaultWeight(), verticalAlignment = Alignment.CenterVertically) {
+                            if (showClass && entry.className.isNotEmpty()) {
+                                Box(
+                                    modifier = GlanceModifier
+                                        .cornerRadius(6.dp)
+                                        .background(ColorProvider(day = colors.headerBg, night = colors.headerBg))
+                                        .padding(horizontal = 6.dp, vertical = 1.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(text = entry.className, style = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Bold, color = secondaryTextColor), maxLines = 1)
+                                }
+                                Spacer(modifier = GlanceModifier.width(4.dp))
+                            }
+                            Text(text = entry.subject, style = TextStyle(fontSize = entrySize, fontWeight = FontWeight.Bold, color = primaryTextColor), modifier = GlanceModifier.defaultWeight())
+                        }
                         Text(text = roomDisplay.ifEmpty { "—" }, style = TextStyle(fontSize = entrySize, fontWeight = FontWeight.Bold, color = textColor), modifier = GlanceModifier.width(roomW))
 
                         val typeColorHex = when {
@@ -316,10 +341,10 @@ private fun WidgetContent(
                     Spacer(modifier = GlanceModifier.height(2.dp))
                 }
 
-                if (entries.size > 6) {
+                if (groupSubstitutions(entries).size > 6) {
                     Box(modifier = GlanceModifier.fillMaxWidth().padding(top = 4.dp), contentAlignment = Alignment.Center) {
                         Text(
-                            text = "+${entries.size - 6} more",
+                            text = "+${groupSubstitutions(entries).size - 6} more",
                             style = TextStyle(fontSize = labelSize, color = secondaryTextColor)
                         )
                     }
