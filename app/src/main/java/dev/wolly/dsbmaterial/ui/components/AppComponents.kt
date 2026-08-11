@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
@@ -159,6 +160,7 @@ fun ExpressiveSwitch(
     }
 }
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun FontSlider(
     label: String,
@@ -192,7 +194,17 @@ fun FontSlider(
             onValueChange = onValueChange,
             onValueChangeFinished = onValueChangeFinished,
             valueRange = valueRange,
-            steps = steps
+            steps = steps,
+            thumb = { sliderState ->
+                val span = valueRange.endInclusive - valueRange.start
+                val progress =
+                    if (span == 0f) 0f
+                    else ((sliderState.value - valueRange.start) / span).coerceIn(0f, 1f)
+                ContainedLoadingIndicator(
+                    progress = { progress },
+                    modifier = Modifier.size(28.dp)
+                )
+            }
         )
     }
 }

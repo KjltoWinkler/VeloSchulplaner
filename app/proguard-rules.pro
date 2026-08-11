@@ -6,6 +6,11 @@
 -keepattributes *Annotation*
 -dontwarn sun.misc.**
 -keep class com.google.gson.** { *; }
+# R8 full mode only retains generic signatures for classes matched by a -keep
+# rule; Gson's TypeToken relies on the Signature attribute of the anonymous
+# subclass to recover the generic type (bundled automatically since Gson 2.11.0).
+-keep,allowobfuscation class com.google.gson.reflect.TypeToken
+-keep,allowobfuscation class * extends com.google.gson.reflect.TypeToken
 -keep class * extends com.google.gson.TypeAdapter
 -keep class * implements com.google.gson.TypeAdapterFactory
 -keep class * implements com.google.gson.JsonSerializer
