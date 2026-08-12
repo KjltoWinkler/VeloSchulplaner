@@ -46,16 +46,28 @@
 ## 📂 Project Structure
 
 ```text
-app/src/main/java/dev/wolly/dsbmaterial/
-├── api/
-│   └── DSBMobileAPI.kt       # API client for DSBmobile (with GZIP/HTML parsing)
-├── data/
-│   ├── DataStoreManager.kt   # Persistent storage for user settings & credentials
-│   └── Models.kt             # Data classes for substitution entries
-├── ui/
-│   ├── theme/                # Material 3 Theme, Color, Type, and Shape definitions
-│   └── MainViewModel.kt      # ViewModel handling business logic and UI state
-└── MainActivity.kt           # Main entry point and all Compose UI screens
+app/src/main/
+├── assets/webserver/           # Self-contained browser page for the local webserver
+├── res/
+│   ├── font/google_sans_flex.ttf  # Bundled variable font (SIL OFL 1.1)
+│   └── ...                         # Layouts, values, themes, app icon
+└── java/dev/wolly/dsbmaterial/
+    ├── api/
+    │   └── DSBMobileAPI.kt       # API client for DSBmobile (GZIP/HTML parsing)
+    ├── data/
+    │   ├── DataStoreManager.kt   # Persistent storage for settings & credentials
+    │   └── Models.kt             # Data classes for substitution entries
+    ├── ui/
+    │   ├── theme/                # Material 3 Theme, Color, Type, Shape, Motion
+    │   ├── components/           # Shared UI components (sliders, buttons, layout)
+    │   ├── screens/              # Home, Substitutions, Archive, Calendar, Settings,
+    │   │                         # Theme picker, About, Share card, Debug mode, State screens
+    │   └── MainViewModel.kt      # Business logic and UI state
+    ├── AutoFetchWorker.kt        # Background auto-refresh of the substitution plan
+    ├── LocalWebServer.kt         # NanoHTTPD server serving the plan over the local network
+    ├── DSBWidget.kt / DSBWidgetReceiver.kt  # Home-screen widget
+    ├── DSBApp.kt                 # Application class
+    └── MainActivity.kt           # Main entry point and all Compose UI screens
 ```
 
 ## 🛠️ Building the app from source:
@@ -93,6 +105,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## 📄 License
 
 This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENSE) file for details.
+Third-party attributions are listed in the [NOTICE](NOTICE) file.
 
 ---
 <p align="center">
