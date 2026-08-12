@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <strong>Material You Expressive alternative for the DSBmobile app</strong><br>
+  <strong>Material You Expressive alternative for DSBmobile</strong><br>
 </p>
 
 <div align="center">    
@@ -18,7 +18,7 @@
 </div>
 
 ## ❓ Why does this app exist?
-- The offical DSBmobile app sucks for various reasons (outdated ui, not reliable, just displays a webpage), so i decided to make my own app with an Material You UI, Class Filtering and Displaying content natively.
+- The offical DSBmobile app hasn't been update since 2 years and isn't native at all
 
 ## ⬇️ Get DSBmaterial from here
 
@@ -32,6 +32,14 @@
 </p>
 
 ### if you use Obtainium please turn "Include prereleases" on for now
+
+## 📱 Preview
+<p align="center">
+  <img src="assets/Preview/screenshot1.png" alt="Screenshot 1" width="200" style="border-radius:26px;"/>
+  <img src="assets/Preview/screenshot2.png" alt="Screenshot 2" width="200" style="border-radius:26px;"/>
+  <img src="assets/Preview/screenshot3.png" alt="Screenshot 3" width="200" style="border-radius:26px;"/>
+  <img src="assets/Preview/screenshot4.png" alt="Screenshot 4" width="200" style="border-radius:26px;"/>
+</p>
 
 ## 📂 Project Structure
 
