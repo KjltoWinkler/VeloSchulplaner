@@ -11,15 +11,21 @@
 <div align="center">
 	<a href="https://github.com/WollyDev24/DSBmaterial">
 		<img src="https://m3-markdown-badges.vercel.app/stars/6/2/WollyDev24/DSBmaterial" alt="Stars Badge"/>
-	<a href="https://github.com/WollyDev24/DSBmaterial">
+	<a href="https://github.com/WollyDev24/DSBmaterial/LICENSE">
 		<img src="https://ziadoua.github.io/m3-Markdown-Badges/badges/Apache/apache2.svg" alt="Badge"/>
 	</a>
 	</a>
-	<a href="https://github.com/WollyDev24/DSBmaterial">
+	<a href="https://github.com/WollyDev24/DSBmaterial/issues">
 		<img src="https://m3-markdown-badges.vercel.app/issues/1/2/WollyDev24/DSBmaterial" alt="Issue Badge"/>
 	</a>
-	<a href="https://github.com/WollyDev24/DSBmaterial">
+	<a href="https://github.com/WollyDev24/DSBmaterial/releases/latest">
 		<img src="https://ziadoua.github.io/m3-Markdown-Badges/badges/Android/android3.svg" alt="Android Badge"/>
+	</a>
+	<a href="https://github.com/WollyDev24/DSBmaterial/">
+		<img src="https://ziadoua.github.io/m3-Markdown-Badges/badges/Kotlin/kotlin2.svg" alt="Kotlin Badge"/>
+	</a>
+	<a href="https://wolly.is-a.dev/dsbmaterial">
+		<img src="https://ziadoua.github.io/m3-Markdown-Badges/badges/HTML/html2.svg" alt="Website Badge"/>
 	</a>
 
 </div>
