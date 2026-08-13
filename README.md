@@ -1,50 +1,42 @@
+<div align="center">
+
 # DSBmaterial 🎓
 
-<p align="center">
-  <img src="assets/DSBmaterial.png" alt="App Icon" width="128"/>
-</p>
+**Material You Expressive alternative for DSBmobile**
 
-<p align="center">
-  <strong>Material You Expressive alternative for DSBmobile</strong><br>
-</p>
+<img src="assets/DSBmaterial.png" alt="App Icon" width="128"/>
 
-<div align="center">
-	<a href="https://github.com/WollyDev24/DSBmaterial">
-		<img src="https://m3-markdown-badges.vercel.app/stars/6/2/WollyDev24/DSBmaterial" alt="Stars Badge"/>
-	<a href="https://github.com/WollyDev24/DSBmaterial/LICENSE">
-		<img src="https://ziadoua.github.io/m3-Markdown-Badges/badges/Apache/apache2.svg" alt="Badge"/>
-	</a>
-	</a>
-	<a href="https://github.com/WollyDev24/DSBmaterial/issues">
-		<img src="https://m3-markdown-badges.vercel.app/issues/1/2/WollyDev24/DSBmaterial" alt="Issue Badge"/>
-	</a>
-	<a href="https://github.com/WollyDev24/DSBmaterial/releases/latest">
-		<img src="https://ziadoua.github.io/m3-Markdown-Badges/badges/Android/android3.svg" alt="Android Badge"/>
-	</a>
-	<a href="https://github.com/WollyDev24/DSBmaterial/">
-		<img src="https://ziadoua.github.io/m3-Markdown-Badges/badges/Kotlin/kotlin2.svg" alt="Kotlin Badge"/>
-	</a>
-	<a href="https://wolly.is-a.dev/dsbmaterial">
-		<img src="https://ziadoua.github.io/m3-Markdown-Badges/badges/HTML/html2.svg" alt="Website Badge"/>
-	</a>
+[![Stars](https://m3-markdown-badges.vercel.app/stars/6/2/WollyDev24/DSBmaterial)](https://github.com/WollyDev24/DSBmaterial)
+[![Issues](https://m3-markdown-badges.vercel.app/issues/1/2/WollyDev24/DSBmaterial)](https://github.com/WollyDev24/DSBmaterial/issues)
+[![License](https://ziadoua.github.io/m3-Markdown-Badges/badges/Apache/apache2.svg)](LICENSE)
+[![Android](https://ziadoua.github.io/m3-Markdown-Badges/badges/Android/android3.svg)](https://github.com/WollyDev24/DSBmaterial/releases/latest)
+[![Kotlin](https://ziadoua.github.io/m3-Markdown-Badges/badges/Kotlin/kotlin2.svg)](https://kotlinlang.org)
+[![Website](https://ziadoua.github.io/m3-Markdown-Badges/badges/HTML/html2.svg)](https://wolly.is-a.dev/dsbmaterial)
 
 </div>
 
-## ❓ Why does this app exist?
-- The offical DSBmobile app hasn't been update since 2 years and isn't native at all
+A modern, native **Material You Expressive** replacement for the official
+**DSBmobile** app. It shows your school's daily substitution plan in a clean,
+fast and fully customizable interface.
 
-## ⬇️ Get DSBmaterial from here
+The official DSBmobile app hasn't been updated in two years and isn't native at
+all. DSBmaterial is built from scratch with **Kotlin** and **Jetpack Compose**.
 
-<p align="left">
-  <a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/WollyDev24/DSB_Material">
-    <img src="assets/obtainium.png" alt="Get it on Obtainium" height="60" /></a>
-  <a href="https://github.com/WollyDev24/DSB_Material/releases/latest">
-    <img src="assets/github.webp" alt="Get it on GitHub" height="60" /></a>
-<!--  <a href="https://fdroid.org">
-    <img src="assets/fdroid.png" alt="Get it on Fdroid" height="60" /></a> -->
-</p>
+---
 
-## 📱 Preview
+## ✨ Features
+
+- 🎨 **Material You Expressive design** — dynamic color, themes, motion
+- 🎛️ **Theme picker** — many accent colors to choose from
+- 🧩 **Home-screen widget** — the latest substitution plan at a glance
+- 🔄 **Automatic background refresh** — always up to date
+- 🗄️ **Archive** — browse past substitution plans
+- 📅 **Calendar view** — see your schedule by date
+- 🌐 **Local webserver** — share the plan on your home network
+- 🐞 **Debug mode** — plus offline / state screens
+
+## 📸 Screenshots
+
 <p align="center">
   <img src="assets/Preview/screenshot1.png" alt="Screenshot 1" width="200" style="border-radius:26px;"/>
   <img src="assets/Preview/screenshot2.png" alt="Screenshot 2" width="200" style="border-radius:26px;"/>
@@ -52,7 +44,24 @@
   <img src="assets/Preview/screenshot4.png" alt="Screenshot 4" width="200" style="border-radius:26px;"/>
 </p>
 
-## 📂 Project Structure
+## ⬇️ Download
+
+| Source | Link |
+| ------ | ---- |
+| **Obtainium** | [Add repository](https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/WollyDev24/DSBmaterial) |
+| **GitHub Releases** | [Latest release](https://github.com/WollyDev24/DSBmaterial/releases/latest) |
+| **Website** | [wolly.is-a.dev/dsbmaterial](https://wolly.is-a.dev/DSBmaterial) |
+| ~~F-Droid~~ | _Coming soon_ |
+
+## 🧱 Built with
+
+- [Kotlin](https://kotlinlang.org) + [Jetpack Compose](https://developer.android.com/jetpack/compose) / Material 3
+- [OkHttp](https://square.github.io/okhttp/) · [jsoup](https://jsoup.org) · [Gson](https://github.com/google/gson)
+- [DataStore](https://developer.android.com/topic/libraries/architecture/datastore)
+- [Glance](https://developer.android.com/develop/ui/compose/glance) (widget)
+- [WorkManager](https://developer.android.com/topic/libraries/architecture/workmanager) · [NanoHTTPD](https://github.com/NanoHttpd/nanohttpd)
+
+## 📂 Project structure
 
 ```text
 app/src/main/
@@ -79,44 +88,44 @@ app/src/main/
     └── MainActivity.kt           # Main entry point and all Compose UI screens
 ```
 
-## 🛠️ Building the app from source:
+## 🛠️ Building from source
 
-1. **Clone the repo**
-```bash
-git clone https://github.com/WollyDev24/DSB_Material/
-```
-2. **Open in Android Studio**
-   - Open Android Studio
-   - Select "Open an Existing Project"
-   - Navigate to the cloned directory
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/WollyDev24/DSBmaterial
+   ```
+2. **Open in Android Studio** — *Open an Existing Project*, select the cloned directory
+3. **Sync and build** — let Gradle resolve dependencies, then *Build → Make Project*
+4. **Run** — connect a device or start an emulator, then press *Run* ▶️
 
-3. **Sync and Build**
-   - Wait for Gradle to sync dependencies
-   - Build the project (Build → Make Project)
-
-4. **Run**
-   - Connect a device or start an emulator
-   - Click Run (▶️)
+> Prefer the command line?
+> ```bash
+> ./gradlew assembleRelease
+> ```
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! Please feel free to submit a pull request.
 
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+1. Fork the repository
+2. Create your feature branch: `git checkout -b feature/AmazingFeature`
+3. Commit your changes: `git commit -m 'Add some AmazingFeature'`
+4. Push to the branch: `git push origin feature/AmazingFeature`
+5. Open a pull request
 
-## ⭐ Special Thanks to
-- [Tenner/dsbmobile](https://github.com/Tenner/dsbmobile) - Understanding and usage of the API
+## ⭐ Special thanks
+
+- [Tenner/dsbmobile](https://github.com/Tenner/dsbmobile) — understanding and usage of the DSBmobile API
 
 ## 📄 License
 
-This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the **Apache 2.0 License** — see the [LICENSE](LICENSE) file for details.
 Third-party attributions are listed in the [NOTICE](NOTICE) file.
 
 ---
-<p align="center">
-  Made with ❤️ by <a href="https://github.com/wollydev24">WollyDev24</a>
-</p>
+
+<div align="center">
+
+Made with ❤️ by [WollyDev24](https://github.com/wollydev24)
+
+</div>

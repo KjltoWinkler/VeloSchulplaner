@@ -1,0 +1,39 @@
+Categories:
+  - Education
+License: Apache-2.0
+WebSite: https://wolly.is-a.dev/dsbmaterial
+SourceCode: https://github.com/WollyDev24/DSB_Material
+IssueTracker: https://github.com/WollyDev24/DSB_Material/issues
+Changelog: https://github.com/WollyDev24/DSB_Material/releases
+
+AutoName: DSBmaterial
+Summary: Material You alternative for DSBmobile
+Description: |-
+  DSBmaterial is a modern, native Material You Expressive replacement for the
+  official DSBmobile app. It shows your school's daily substitution plan in a
+  clean, fast and customizable interface.
+
+  Features:
+  * Material You Expressive design with dynamic color and themes
+  * Home screen widget that shows the latest substitution plan
+  * Automatic background refresh of the plan
+  * Archive of past substitution plans
+  * Calendar view
+  * Theme picker with many accent colors
+  * Local webserver to share the plan on your home network
+  * Debug mode and offline state screens
+
+RepoType: git
+Repo: https://github.com/WollyDev24/DSB_Material.git
+
+Builds:
+  - versionName: 2.0.0
+    versionCode: 31
+    commit: v2.0.0
+    gradle:
+      - yes
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
+CurrentVersion: 2.0.0
+CurrentVersionCode: 31
