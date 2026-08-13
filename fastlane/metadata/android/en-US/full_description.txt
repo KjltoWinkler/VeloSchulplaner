@@ -1,6 +1,6 @@
-DSBmaterial is a modern, native Material You Expressive replacement for the official DSBmobile app. It shows your school's daily substitution plan in a clean, fast and customizable interface.
+Astra is a modern, native Material You Expressive replacement for the official DSBmobile app. It shows your school's daily substitution plan in a clean, fast and customizable interface.
 
-The official DSBmobile app has not been updated in years and is not native at all. DSBmaterial is built from scratch with Kotlin and Jetpack Compose.
+The official DSBmobile app has not been updated in years and is not native at all. Astra is built from scratch with Kotlin and Jetpack Compose.
 
 Features:
 
@@ -14,4 +14,4 @@ Features:
 - Debug mode and offline state screens
 - Supports German school substitution data via the DSBmobile API
 
-DSBmaterial is free and open source, licensed under the Apache 2.0 License.
+Astra is free and open source, licensed under the Apache 2.0 License.

@@ -1,6 +1,6 @@
 <div align="center">
 
-# DSBmaterial 🎓
+# Astra ✨
 
 **Material You Expressive alternative for DSBmobile**
 
@@ -20,7 +20,7 @@ A modern, native **Material You Expressive** replacement for the official
 fast and fully customizable interface.
 
 The official DSBmobile app hasn't been updated in two years and isn't native at
-all. DSBmaterial is built from scratch with **Kotlin** and **Jetpack Compose**.
+all. Astra is built from scratch with **Kotlin** and **Jetpack Compose**.
 
 ---
 

@@ -195,7 +195,7 @@ object LocalWebServer {
             ctx.assets.open("webserver/index.html").bufferedReader().use { it.readText() }
                 .also { cachedPage = it }
         } catch (_: Exception) {
-            "<html><head><meta charset=\"utf-8\"></head><body><h1>DSB Material</h1></body></html>"
+            "<html><head><meta charset=\"utf-8\"></head><body><h1>Astra</h1></body></html>"
         }
     }
 

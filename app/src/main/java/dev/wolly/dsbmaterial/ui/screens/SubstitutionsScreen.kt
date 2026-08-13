@@ -767,6 +767,6 @@ fun buildShareText(day: String, entries: List<SubstitutionEntry>, isRoomFirst: B
         }
     }
     sb.appendLine()
-    sb.appendLine("DSBmaterial: https://github.com/wollydev24/DSBmaterial")
+    sb.appendLine("Astra: https://github.com/wollydev24/DSBmaterial")
     return sb.toString()
 }

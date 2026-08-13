@@ -1,12 +1,12 @@
 <resources>
-    <string name="app_name">DSBmaterial</string>
-    <string name="title_main">DSB Material</string>
+    <string name="app_name">Astra</string>
+    <string name="title_main">Astra</string>
     <string name="label_home">Start</string>
     <string name="label_plans">Pläne</string>
     <string name="title_settings">Einstellungen</string>
     <string name="title_login">DSBmobile Login</string>
     <string name="title_select_class">Klasse auswählen</string>
-    <string name="title_about">Über DSB Material</string>
+    <string name="title_about">Über Astra</string>
     
     <string name="action_back">Zurück</string>
     <string name="action_refresh">Aktualisieren</string>
@@ -75,7 +75,7 @@
     <string name="label_multi_class_desc">Vertretungen für zusätzliche Klassen anzeigen</string>
     <string name="label_add_class">Klasse hinzufügen</string>
     <string name="label_class_hint">Klassenname (z.B. 10b)</string>
-    <string name="label_widget_title">DSB Material</string>
+    <string name="label_widget_title">Astra</string>
     <string name="label_widget_desc">Vertretungen für heute</string>
     <string name="label_widget_no_data">Keine Vertretungen verfügbar</string>
     <string name="label_widget_updated">Aktualisiert %1$s</string>

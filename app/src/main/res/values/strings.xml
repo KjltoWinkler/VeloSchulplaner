@@ -1,12 +1,12 @@
 <resources>
-    <string name="app_name">DSBmaterial</string>
-    <string name="title_main">DSB Material</string>
+    <string name="app_name">Astra</string>
+    <string name="title_main">Astra</string>
     <string name="label_home">Home</string>
     <string name="label_plans">Plans</string>
     <string name="title_settings">Settings</string>
     <string name="title_login">DSBmobile Login</string>
     <string name="title_select_class">Select your Class</string>
-    <string name="title_about">About DSB Material</string>
+    <string name="title_about">About Astra</string>
     
     <string name="action_back">Back</string>
     <string name="action_refresh">Refresh</string>
@@ -87,7 +87,7 @@
     <string name="label_multi_class_desc">View substitutions for additional classes</string>
     <string name="label_add_class">Add Class</string>
     <string name="label_class_hint">Class name (e.g. 10b)</string>
-    <string name="label_widget_title">DSB Material</string>
+    <string name="label_widget_title">Astra</string>
     <string name="label_widget_desc">Today\'s substitutions</string>
     <string name="label_widget_no_data">No substitutions available</string>
     <string name="label_widget_updated">Updated %1$s</string>

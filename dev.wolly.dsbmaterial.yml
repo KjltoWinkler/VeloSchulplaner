@@ -1,15 +1,18 @@
 Categories:
-  - Education
+  - Science &Education
 License: Apache-2.0
-WebSite: https://wolly.is-a.dev/dsbmaterial
-SourceCode: https://github.com/WollyDev24/DSB_Material
-IssueTracker: https://github.com/WollyDev24/DSB_Material/issues
-Changelog: https://github.com/WollyDev24/DSB_Material/releases
+AuthorName: WollyDev24
+AuthorEmail: WollyDev24@gmail.com
+AuthorWebSite: https://wolly.is-a.dev
+WebSite: https://wolly.is-a.dev/DSBmaterial
+SourceCode: https://github.com/WollyDev24/DSBmaterial
+IssueTracker: https://github.com/WollyDev24/DSBmaterial/issues
+Changelog: https://github.com/WollyDev24/DSBmaterial/releases
 
-AutoName: DSBmaterial
+AutoName: Astra
 Summary: Material You alternative for DSBmobile
 Description: |-
-  DSBmaterial is a modern, native Material You Expressive replacement for the
+  Astra is a modern, native Material You Expressive replacement for the
   official DSBmobile app. It shows your school's daily substitution plan in a
   clean, fast and customizable interface.
 
@@ -24,7 +27,7 @@ Description: |-
   * Debug mode and offline state screens
 
 RepoType: git
-Repo: https://github.com/WollyDev24/DSB_Material.git
+Repo: https://github.com/WollyDev24/DSBmaterial.git
 
 Builds:
   - versionName: 2.0.0

@@ -5,6 +5,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -24,21 +25,28 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LoadingIndicatorDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.toPath
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.center
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Matrix
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
@@ -47,8 +55,11 @@ import androidx.compose.ui.semantics.toggleableState
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.graphics.shapes.Morph
 import dev.wolly.dsbmaterial.ui.theme.springDefaultSpatial
 import dev.wolly.dsbmaterial.ui.theme.springDefaultEffects
+import kotlin.math.max
+import kotlin.math.min
 
 @Composable
 fun CollapsingTopBar(
@@ -200,12 +211,65 @@ fun FontSlider(
                 val progress =
                     if (span == 0f) 0f
                     else ((sliderState.value - valueRange.start) / span).coerceIn(0f, 1f)
-                ContainedLoadingIndicator(
-                    progress = { progress },
-                    modifier = Modifier.size(28.dp)
+                MorphingSliderThumb(
+                    progress = progress,
+                    modifier = Modifier.size(40.dp)
                 )
             }
         )
+    }
+}
+
+/**
+ * The font-roundness slider thumb: the M3 determinate morphing shape (circle → soft burst) drawn
+ * without any clip, sitting on a soft background disc so the slider track stays readable behind it.
+ */
+@Composable
+private fun MorphingSliderThumb(
+    progress: Float,
+    modifier: Modifier = Modifier
+) {
+    val polygons = LoadingIndicatorDefaults.DeterminateIndicatorPolygons
+    val morph = remember(polygons) {
+        Morph(polygons[1].normalized(), polygons[0].normalized())
+    }
+    val scaleFactor = remember(polygons) {
+        var factor = 1f
+        val bounds = FloatArray(4)
+        val maxBounds = FloatArray(4)
+        polygons.forEach { polygon ->
+            polygon.calculateBounds(bounds)
+            polygon.calculateMaxBounds(maxBounds)
+            val sx = (bounds[2] - bounds[0]) / (maxBounds[2] - maxBounds[0])
+            val sy = (bounds[3] - bounds[1]) / (maxBounds[3] - maxBounds[1])
+            factor = min(factor, max(sx, sy))
+        }
+        factor
+    }
+    val path = remember { Path() }
+    val scaleMatrix = remember { Matrix() }
+    val coerced = progress.coerceIn(0f, 1f)
+    val shapeColor = MaterialTheme.colorScheme.primary
+    val strokeWidth = 3.dp
+    Canvas(modifier = modifier) {
+        rotate(degrees = -coerced * 180, pivot = center) {
+            val shapePath = morph.toPath(progress = coerced, path = path, startAngle = 0)
+            scaleMatrix.reset()
+            scaleMatrix.apply {
+                scale(
+                    x = size.width * scaleFactor * 0.85f,
+                    y = size.height * scaleFactor * 0.85f
+                )
+            }
+            shapePath.transform(scaleMatrix)
+            shapePath.translate(center - shapePath.getBounds().center)
+            drawPath(shapePath, color = shapeColor.copy(alpha = 0.12f))
+            drawPath(
+                path = shapePath,
+                color = shapeColor,
+                style = Stroke(width = strokeWidth.toPx())
+            )
+        }
     }
 }
 
