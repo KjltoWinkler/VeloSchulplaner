@@ -1,0 +1,6 @@
+- New Material 3 Exprssive Ui
+- Custom Server Connection
+- Homescreen Widget
+- Notifications
+- Multi Class Support
+- Local Webserver
