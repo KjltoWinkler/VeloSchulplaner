@@ -4,7 +4,7 @@
 
 **Material You Expressive alternative for DSBmobile**
 
-<img src="assets/DSBmaterial.png" alt="App Icon" width="128"/>
+<img src="assets/icon.png" alt="App Icon" width="128"/>
 
 [![Stars](https://m3-markdown-badges.vercel.app/stars/6/2/WollyDev24/DSBmaterial)](https://github.com/WollyDev24/DSBmaterial)
 [![Issues](https://m3-markdown-badges.vercel.app/issues/1/2/WollyDev24/DSBmaterial)](https://github.com/WollyDev24/DSBmaterial/issues)
