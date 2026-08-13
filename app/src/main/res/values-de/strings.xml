@@ -35,6 +35,18 @@
     <string name="label_sort_period">Nach Stunde sortieren</string>
     <string name="label_about">Über</string>
     <string name="label_archive">Archiv</string>
+    <string name="label_updates">Updates</string>
+    <string name="action_check_updates">Nach Updates suchen</string>
+    <string name="desc_check_updates">Prüfe auf die neueste Version</string>
+    <string name="msg_checking_updates">Suche nach Updates…</string>
+    <string name="desc_checking_updates">Prüfe auf die neueste Version</string>
+    <string name="msg_update_available">Update verfügbar</string>
+    <string name="desc_update_available">Version %1$s ist verfügbar</string>
+    <string name="msg_up_to_date">Du bist auf dem neuesten Stand</string>
+    <string name="desc_up_to_date">Astra ist auf dem neuesten Stand</string>
+    <string name="msg_update_error">Prüfung fehlgeschlagen</string>
+    <string name="desc_update_error">Konnte nicht nach Updates suchen. Zum Wiederholen tippen.</string>
+    <string name="action_download">Herunterladen</string>
     
     <string name="desc_select_class">Wähle deine Klasse aus der Liste (Wegen einschränkungen werden nur klassen mit vertretungen angezeigt, wenn deine nicht angezeigt wird, gib sie manuell ein)</string>
     <string name="desc_swap_default">Standard-Zuordnung</string>

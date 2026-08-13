@@ -2,6 +2,8 @@
 package dev.wolly.dsbmaterial.ui.screens
 
 import android.Manifest
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -56,6 +58,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInParent
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
@@ -106,6 +109,14 @@ fun DSBApp(viewModel: MainViewModel) {
     val isOffline by viewModel.isOffline.collectAsState()
     val username by viewModel.username.collectAsState()
     val password by viewModel.password.collectAsState()
+    val updateState by viewModel.updateState.collectAsState()
+    val context = LocalContext.current
+    val openUpdateDownload = { url: String ->
+        runCatching {
+            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        }
+        Unit
+    }
 
     val destinations = listOf(
         Destination(stringResource(R.string.label_home), Icons.Filled.Home, Icons.Outlined.Home),
@@ -442,6 +453,9 @@ fun DSBApp(viewModel: MainViewModel) {
                                     webServerEnabled = webServerEnabled,
                                     webServerUrls = webServerUrls,
                                     onToggleWebServer = viewModel::toggleWebServer,
+                                    updateState = updateState,
+                                    onCheckUpdates = viewModel::checkForUpdates,
+                                    onDownloadUpdate = openUpdateDownload,
                                     onAbout = { showAbout = true },
                                     onAddClass = viewModel::addSelectedClass,
                                     onRemoveClass = viewModel::removeSelectedClass

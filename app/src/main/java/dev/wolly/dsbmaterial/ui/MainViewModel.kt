@@ -7,9 +7,12 @@ import androidx.compose.runtime.Stable
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import dev.wolly.dsbmaterial.AutoFetchWorker
+import dev.wolly.dsbmaterial.BuildConfig
 import dev.wolly.dsbmaterial.DSBWidget
 import dev.wolly.dsbmaterial.LocalWebServer
+import dev.wolly.dsbmaterial.api.AppUpdate
 import dev.wolly.dsbmaterial.api.DSBMobileAPI
+import dev.wolly.dsbmaterial.api.UpdateChecker
 import dev.wolly.dsbmaterial.data.DataStoreManager
 import dev.wolly.dsbmaterial.data.SubstitutionEntry
 import com.google.gson.Gson
@@ -30,6 +33,13 @@ sealed class UiState {
     object NeedsLogin : UiState()
     data class SelectingClass(val classes: List<String>, val u: String, val p: String) : UiState()
 }
+
+enum class UpdateCheckStatus { Idle, Checking, UpToDate, Available, Error }
+
+data class UpdateState(
+    val status: UpdateCheckStatus = UpdateCheckStatus.Idle,
+    val update: AppUpdate? = null
+)
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val dataStoreManager = DataStoreManager(application)
@@ -119,6 +129,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _selectedCalendarDay = MutableStateFlow<String?>(null)
     val selectedCalendarDay: StateFlow<String?> = _selectedCalendarDay
 
+    private val _updateState = MutableStateFlow(UpdateState())
+    val updateState: StateFlow<UpdateState> = _updateState
+
     private var lastSuccessEntries: List<SubstitutionEntry> = emptyList()
     private var isDemoMode = false
     private var appOpenTime = 0L
@@ -150,6 +163,22 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         loadSelectedClasses()
         loadCachedSnapshot()
         scheduleAutoFetchOnStartup()
+        checkForUpdates()
+    }
+
+    fun checkForUpdates() {
+        if (_updateState.value.status == UpdateCheckStatus.Checking) return
+        viewModelScope.launch {
+            _updateState.value = UpdateState(status = UpdateCheckStatus.Checking)
+            val latest = UpdateChecker.checkLatest()
+            _updateState.value = if (latest == null) {
+                UpdateState(status = UpdateCheckStatus.Error)
+            } else if (UpdateChecker.isUpdateAvailable(latest.version)) {
+                UpdateState(status = UpdateCheckStatus.Available, update = latest)
+            } else {
+                UpdateState(status = UpdateCheckStatus.UpToDate, update = latest)
+            }
+        }
     }
 
     private fun loadCachedSnapshot() {

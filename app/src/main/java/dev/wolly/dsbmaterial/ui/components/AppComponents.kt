@@ -255,12 +255,12 @@ private fun MorphingSliderThumb(
         rotate(degrees = -coerced * 180, pivot = center) {
             val shapePath = morph.toPath(progress = coerced, path = path, startAngle = 0)
             scaleMatrix.reset()
-            scaleMatrix.apply {
-                scale(
-                    x = size.width * scaleFactor * 0.85f,
-                    y = size.height * scaleFactor * 0.85f
-                )
-            }
+                scaleMatrix.apply {
+                    scale(
+                        x = size.width * scaleFactor * 0.6f,
+                        y = size.height * scaleFactor * 0.6f
+                    )
+                }
             shapePath.transform(scaleMatrix)
             shapePath.translate(center - shapePath.getBounds().center)
             drawPath(shapePath, color = shapeColor.copy(alpha = 0.12f))

@@ -43,6 +43,7 @@ import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.unit.sp
@@ -625,16 +626,26 @@ fun mergedGroupEntry(entries: List<SubstitutionEntry>): SubstitutionEntry {
 fun SubstitutionTableRowContent(
     entry: SubstitutionEntry,
     isRoomFirst: Boolean,
-    period: String = entry.lesson
+    period: String = entry.lesson,
+    singleLine: Boolean = false
 ) {
     val roomDisplay = if (isRoomFirst) entry.room else entry.art
     val typeDisplay = if (isRoomFirst) entry.art else entry.room
 
+    val periodStyle = MaterialTheme.typography.titleMedium.copy(fontSize = if (singleLine) 13.sp else 15.sp)
+    val subjectStyle = MaterialTheme.typography.titleMedium.copy(fontSize = if (singleLine) 13.sp else 15.sp)
+    val roomStyle = MaterialTheme.typography.bodyLarge.copy(fontSize = if (singleLine) 13.sp else 15.sp)
+    val periodWeight = if (singleLine) 1.1f else 1f
+    val subjectWeight = if (singleLine) 2.0f else 1.8f
+    val roomWeight = if (singleLine) 1.3f else 1.4f
+    val typeWeight = if (singleLine) 2.1f else 2f
+    val maxLines = if (singleLine) 1 else 2
+
     Column(modifier = Modifier.padding(14.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            TableCell(period, 1f, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleMedium.copy(fontSize = 15.sp))
-            TableCell(entry.subject, 1.8f, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.titleMedium.copy(fontSize = 15.sp))
-            TableCell(roomDisplay.ifEmpty { "—" }, 1.4f, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp))
+            TableCell(period, periodWeight, fontWeight = FontWeight.ExtraBold, style = periodStyle, maxLines = maxLines)
+            TableCell(entry.subject, subjectWeight, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary, style = subjectStyle, maxLines = maxLines)
+            TableCell(roomDisplay.ifEmpty { "—" }, roomWeight, fontWeight = FontWeight.Bold, style = roomStyle, maxLines = maxLines)
             val defaultTypeColor = MaterialTheme.colorScheme.secondary
             val typeColor = remember(typeDisplay, defaultTypeColor) {
                 val lower = typeDisplay.lowercase()
@@ -651,7 +662,7 @@ fun SubstitutionTableRowContent(
             val typeBgColor = typeColor.copy(alpha = 0.12f)
             Box(
                 modifier = Modifier
-                    .weight(2f)
+                    .weight(typeWeight)
                     .clip(RoundedCornerShape(8.dp))
                     .background(typeBgColor)
                     .padding(horizontal = 8.dp, vertical = 4.dp),
@@ -663,7 +674,8 @@ fun SubstitutionTableRowContent(
                     fontWeight = FontWeight.Bold,
                     color = typeColor,
                     maxLines = 1,
-                    softWrap = false
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
@@ -714,7 +726,8 @@ fun RowScope.TableCell(
     weight: Float, 
     fontWeight: FontWeight = FontWeight.Normal, 
     color: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurface,
-    style: androidx.compose.ui.text.TextStyle = MaterialTheme.typography.bodyLarge
+    style: androidx.compose.ui.text.TextStyle = MaterialTheme.typography.bodyLarge,
+    maxLines: Int = 2
     ) {
     Text(
         text = text, 
@@ -722,7 +735,9 @@ fun RowScope.TableCell(
         style = style, 
         fontWeight = fontWeight, 
         color = color, 
-        maxLines = 2
+        maxLines = maxLines,
+        softWrap = maxLines > 1,
+        overflow = TextOverflow.Ellipsis
     )
 }
 

@@ -35,6 +35,18 @@
     <string name="label_sort_period">Sort by Period</string>
     <string name="label_about">About</string>
     <string name="label_archive">Archive</string>
+    <string name="label_updates">Updates</string>
+    <string name="action_check_updates">Check for Updates</string>
+    <string name="desc_check_updates">Check for the latest version</string>
+    <string name="msg_checking_updates">Checking for updates…</string>
+    <string name="desc_checking_updates">Looking for the latest version</string>
+    <string name="msg_update_available">Update available</string>
+    <string name="desc_update_available">Version %1$s is available</string>
+    <string name="msg_up_to_date">You\'re up to date</string>
+    <string name="desc_up_to_date">Astra is on the latest version</string>
+    <string name="msg_update_error">Check failed</string>
+    <string name="desc_update_error">Could not check for updates. Tap to retry.</string>
+    <string name="action_download">Download</string>
     
     <string name="desc_select_class">Choose your class from the list (Because of limitations only classes with Substitiutions are shown, if your class isnt shown, enter it manually)</string>
     <string name="desc_swap_default">Default mapping</string>

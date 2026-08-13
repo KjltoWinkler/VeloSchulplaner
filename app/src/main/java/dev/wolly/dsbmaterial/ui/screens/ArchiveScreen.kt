@@ -56,7 +56,16 @@ fun ArchiveScreen(
         }
     } else {
         val grouped = entries.groupBy { it.day }
-        LazyColumn(modifier = modifier, contentPadding = PaddingValues(dpv(16.dp, 20.dp)), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        LazyColumn(
+            modifier = modifier,
+            contentPadding = PaddingValues(
+                start = dpv(16.dp, 20.dp),
+                top = dpv(16.dp, 20.dp),
+                end = dpv(16.dp, 20.dp),
+                bottom = dpv(54.dp,56.dp)
+            ),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
             item {
                 OutlinedButton(onClick = onOpenCalendar, modifier = Modifier.fillMaxWidth(), shape = CircleShape) {
                     Icon(Icons.Default.CalendarMonth, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -75,12 +84,13 @@ fun ArchiveScreen(
                         shape = MaterialTheme.shapes.extraLarge,
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
                     ) {
-                        Row(modifier = Modifier.padding(dpv(20.dp, 28.dp)), verticalAlignment = Alignment.CenterVertically) {
+                        Row(modifier = Modifier.padding(dpv(16.dp, 28.dp)), verticalAlignment = Alignment.CenterVertically) {
                             Box(modifier = Modifier.weight(1f)) {
                                 SubstitutionTableRowContent(
                                     entry = mergedGroupEntry(group),
                                     isRoomFirst = isRoomFirst,
-                                    period = mergedPeriodLabel(group)
+                                    period = mergedPeriodLabel(group),
+                                    singleLine = true
                                 )
                             }
                             IconButton(onClick = { pendingRemoval = group }) {

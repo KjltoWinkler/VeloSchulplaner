@@ -1,7 +1,15 @@
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
 package dev.wolly.dsbmaterial.ui.screens
 
+import dev.wolly.dsbmaterial.BuildConfig
 import dev.wolly.dsbmaterial.R
+import dev.wolly.dsbmaterial.ui.components.ExpressiveSwitch
+import dev.wolly.dsbmaterial.ui.components.FontSlider
+import dev.wolly.dsbmaterial.ui.theme.fullRoundedShape
+import dev.wolly.dsbmaterial.ui.theme.springDefaultEffects
+import dev.wolly.dsbmaterial.ui.theme.springDefaultSpatial
+import dev.wolly.dsbmaterial.ui.UpdateCheckStatus
+import dev.wolly.dsbmaterial.ui.UpdateState
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.MutableTransitionState
@@ -35,11 +43,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import dev.wolly.dsbmaterial.ui.components.ExpressiveSwitch
-import dev.wolly.dsbmaterial.ui.components.FontSlider
-import dev.wolly.dsbmaterial.ui.theme.fullRoundedShape
-import dev.wolly.dsbmaterial.ui.theme.springDefaultEffects
-import dev.wolly.dsbmaterial.ui.theme.springDefaultSpatial
 
 @Composable
 fun SettingsScreen(
@@ -70,6 +73,9 @@ fun SettingsScreen(
     webServerEnabled: Boolean = false,
     webServerUrls: List<String> = emptyList(),
     onToggleWebServer: () -> Unit = {},
+    updateState: UpdateState = UpdateState(),
+    onCheckUpdates: () -> Unit = {},
+    onDownloadUpdate: (String) -> Unit = {},
     onAbout: () -> Unit,
     onAddClass: (String) -> Unit = {},
     onRemoveClass: (String) -> Unit = {},
@@ -465,6 +471,89 @@ fun SettingsScreen(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                    }
+                }
+            }
+        }
+
+        item {
+            SettingsSectionHeader(stringResource(R.string.label_updates), modifier = Modifier.padding(top = 16.dp))
+        }
+
+        item {
+            val status = updateState.status
+            SettingCard {
+                SettingsRow(
+                    title = when (status) {
+                        UpdateCheckStatus.Available -> stringResource(R.string.msg_update_available)
+                        UpdateCheckStatus.Checking -> stringResource(R.string.msg_checking_updates)
+                        UpdateCheckStatus.UpToDate -> stringResource(R.string.msg_up_to_date)
+                        UpdateCheckStatus.Error -> stringResource(R.string.msg_update_error)
+                        UpdateCheckStatus.Idle -> stringResource(R.string.label_updates)
+                    },
+                    description = when (status) {
+                        UpdateCheckStatus.Available -> stringResource(R.string.desc_update_available, updateState.update?.version ?: "")
+                        UpdateCheckStatus.Checking -> stringResource(R.string.desc_checking_updates)
+                        UpdateCheckStatus.UpToDate -> stringResource(R.string.desc_up_to_date)
+                        UpdateCheckStatus.Error -> stringResource(R.string.desc_update_error)
+                        UpdateCheckStatus.Idle -> stringResource(R.string.desc_check_updates)
+                    },
+                    icon = when (status) {
+                        UpdateCheckStatus.Available -> Icons.Default.SystemUpdate
+                        UpdateCheckStatus.Checking -> Icons.Default.Sync
+                        UpdateCheckStatus.UpToDate -> Icons.Default.CheckCircle
+                        UpdateCheckStatus.Error -> Icons.Default.ErrorOutline
+                        UpdateCheckStatus.Idle -> Icons.Default.CloudDownload
+                    },
+                    iconContainerColor = when (status) {
+                        UpdateCheckStatus.Available -> MaterialTheme.colorScheme.tertiaryContainer
+                        UpdateCheckStatus.UpToDate -> MaterialTheme.colorScheme.secondaryContainer
+                        UpdateCheckStatus.Error -> MaterialTheme.colorScheme.errorContainer
+                        else -> MaterialTheme.colorScheme.primaryContainer
+                    },
+                    isActive = status == UpdateCheckStatus.Available,
+                    trailing = {
+                        if (status == UpdateCheckStatus.Checking) {
+                            CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.5.dp)
+                        }
+                    },
+                    onClick = if (status == UpdateCheckStatus.Error) onCheckUpdates else null
+                )
+                if (status == UpdateCheckStatus.Available) {
+                    SettingsDivider()
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = { updateState.update?.downloadUrl?.let(onDownloadUpdate) },
+                            shape = fullRoundedShape(),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text(stringResource(R.string.action_download))
+                        }
+                        OutlinedButton(
+                            onClick = onCheckUpdates,
+                            shape = fullRoundedShape(),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text(stringResource(R.string.action_check_updates))
+                        }
+                    }
+                } else if (status != UpdateCheckStatus.Checking) {
+                    SettingsDivider()
+                    TextButton(
+                        onClick = onCheckUpdates,
+                        shape = fullRoundedShape(),
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                    ) {
+                        Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text(stringResource(R.string.action_check_updates))
                     }
                 }
             }
