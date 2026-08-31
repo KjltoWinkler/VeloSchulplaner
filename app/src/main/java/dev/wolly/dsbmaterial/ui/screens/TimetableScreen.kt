@@ -69,41 +69,7 @@ fun TimetableScreen(
                 .fillMaxSize()
                 .padding(horizontal = 20.dp)
         ) {
-            Spacer(Modifier.height(16.dp))
-
-            // Header Section
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        text = "Stundenplan",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = if (!assignedClass.isNullOrBlank()) "Klasse $assignedClass" else "Wochenübersicht",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                IconButton(
-                    onClick = onRefresh,
-                    modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerHigh, CircleShape)
-                ) {
-                    Icon(
-                        Icons.Default.Refresh,
-                        contentDescription = "Aktualisieren",
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(8.dp))
 
             // Day Selector Chips (Horizontal Scrollable)
             Row(

@@ -63,6 +63,8 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
@@ -128,7 +130,6 @@ fun DSBApp(viewModel: MainViewModel) {
         Destination(stringResource(R.string.label_home), Icons.Filled.Home, Icons.Outlined.Home),
         Destination("Stundenplan", Icons.Filled.Schedule, Icons.Outlined.Schedule),
         Destination(stringResource(R.string.label_plans), Icons.Filled.CalendarMonth, Icons.Outlined.CalendarMonth),
-        Destination(stringResource(R.string.label_archive), Icons.Filled.Archive, Icons.Outlined.Archive),
         Destination(stringResource(R.string.title_settings), Icons.Filled.Settings, Icons.Outlined.Settings)
     )
 
@@ -168,7 +169,6 @@ fun DSBApp(viewModel: MainViewModel) {
     var selectedDay by remember { mutableStateOf<String?>(null) }
     var showSheet by remember { mutableStateOf(false) }
     var cardRect by remember { mutableStateOf(Rect.Zero) }
-    var isDismissing by remember { mutableStateOf(false) }
     var showThemePicker by remember { mutableStateOf(false) }
     var showAbout by remember { mutableStateOf(false) }
     var showDebug by remember { mutableStateOf(false) }
@@ -179,6 +179,8 @@ fun DSBApp(viewModel: MainViewModel) {
     LaunchedEffect(showSheet) {
         if (!showSheet) sheetState.hide()
     }
+
+    var isDismissing by remember { mutableStateOf(false) }
 
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
@@ -247,233 +249,239 @@ fun DSBApp(viewModel: MainViewModel) {
         }
     }
 
-    Row(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface)) {
-        AnimatedVisibility(
-            visible = isTablet && showNavCondition,
-            enter = slideInHorizontally { -it } + fadeIn(tween(300)),
-            exit = slideOutHorizontally(tween(0)) { -it } + fadeOut(tween(0))
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .width(120.dp)
-                    .background(MaterialTheme.colorScheme.surface)
-            ) {
-                NavigationRail(
-                    modifier = Modifier.fillMaxSize().padding(top = 48.dp)
-                        .clip(RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp)),
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.surface
+    ) {
+        Row(modifier = Modifier.fillMaxSize()) {
+            if (isTablet && showNavCondition) {
+                Box(
+                    modifier = Modifier
+                        .width(dpv(100.dp, 120.dp))
+                        .fillMaxHeight()
+                        .background(MaterialTheme.colorScheme.surface)
                 ) {
-                    destinations.forEachIndexed { index, destination ->
-                        NavigationRailItem(
-                            selected = currentTab == index,
-                            onClick = { viewModel.setTab(index) },
-                            icon = {
-                                Icon(
-                                    if (currentTab == index) destination.selectedIcon else destination.unselectedIcon,
-                                    contentDescription = destination.label,
-                                    modifier = Modifier.size(28.dp)
-                                )
-                            },
-                            label = { Text(destination.label, maxLines = 2, softWrap = true, textAlign = androidx.compose.ui.text.style.TextAlign.Center) },
-                            alwaysShowLabel = true
-                        )
-                        if (index < destinations.lastIndex) {
-                            Spacer(Modifier.height(8.dp))
+                    NavigationRail(
+                        modifier = Modifier.fillMaxSize().padding(top = 48.dp)
+                            .clip(RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp)),
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                    ) {
+                        destinations.forEachIndexed { index, destination ->
+                            NavigationRailItem(
+                                selected = currentTab == index,
+                                onClick = { viewModel.setTab(index) },
+                                icon = {
+                                    Icon(
+                                        if (currentTab == index) destination.selectedIcon else destination.unselectedIcon,
+                                        contentDescription = destination.label,
+                                        modifier = Modifier.size(28.dp)
+                                    )
+                                },
+                                label = {
+                                    Text(
+                                        text = destination.label,
+                                        maxLines = 1,
+                                        softWrap = false,
+                                        overflow = TextOverflow.Ellipsis,
+                                        textAlign = TextAlign.Center
+                                    )
+                                },
+                                alwaysShowLabel = true
+                            )
+                            if (index < destinations.lastIndex) {
+                                Spacer(Modifier.height(8.dp))
+                            }
                         }
+                        Spacer(Modifier.weight(1f))
                     }
-                    Spacer(Modifier.weight(1f))
                 }
             }
-        }
 
-        Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
-            Scaffold(
-                modifier = Modifier.fillMaxSize(),
-                topBar = {
-                    if (!overlayActive && uiState !is UiState.NeedsLogin && uiState !is UiState.Loading && uiState !is UiState.SelectingClass) {
-                        CollapsingTopBar(
-                            title = destinations[currentTab].label,
-                            actions = {
-                                if (currentTab == 0) {
-                                    ProfileButton(username = username, onClick = { showProfile = true })
-                                }
-                                if ((currentTab == 1 || currentTab == 2) && (uiState is UiState.Success || uiState is UiState.Idle)) {
-                                    val refreshing = uiState is UiState.Loading || isTimetableLoading
-                                    val refreshRotation by animateFloatAsState(
-                                        targetValue = if (refreshing) 360f else 0f,
-                                        animationSpec = if (refreshing) infiniteRepeatable(
-                                            animation = tween(1000, easing = LinearEasing)
-                                        ) else tween(0),
-                                        label = "refresh_rotation"
-                                    )
-                                    IconButton(onClick = { viewModel.fetchData() }) {
-                                        Icon(
-                                            Icons.Default.Refresh,
-                                            contentDescription = stringResource(R.string.action_refresh),
-                                            modifier = Modifier.rotate(refreshRotation)
+            Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
+                Scaffold(
+                    modifier = Modifier.fillMaxSize(),
+                    topBar = {
+                        if (!overlayActive && uiState !is UiState.NeedsLogin && uiState !is UiState.Loading && uiState !is UiState.SelectingClass) {
+                            CollapsingTopBar(
+                                title = destinations[currentTab].label,
+                                actions = {
+                                    if (currentTab == 0) {
+                                        ProfileButton(username = username, onClick = { showProfile = true })
+                                    }
+                                    if ((currentTab == 1 || currentTab == 2) && (uiState is UiState.Success || uiState is UiState.Idle)) {
+                                        val refreshing = uiState is UiState.Loading || isTimetableLoading
+                                        val refreshRotation by animateFloatAsState(
+                                            targetValue = if (refreshing) 360f else 0f,
+                                            animationSpec = if (refreshing) infiniteRepeatable(
+                                                animation = tween(1000, easing = LinearEasing)
+                                            ) else tween(0),
+                                            label = "refresh_rotation"
                                         )
-                                    }
-                                } else if (currentTab == 3 && archiveEntries.isNotEmpty()) {
-                                    IconButton(onClick = { viewModel.clearArchive() }) {
-                                        Icon(Icons.Default.DeleteSweep, contentDescription = stringResource(R.string.action_clear_archive))
-                                    }
-                                }
-                            }
-                        )
-                    }
-                },
-                bottomBar = {
-                    if (!isTablet && showNavCondition) {
-                        if (navHidden) {
-                            FloatingNavigationBar(
-                                destinations = destinations,
-                                currentTab = currentTab,
-                                onSelect = { viewModel.setTab(it) }
-                            )
-                        } else {
-                            NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainer) {
-                                destinations.forEachIndexed { index, destination ->
-                                    val selected = currentTab == index
-                                    NavigationBarItem(
-                                        selected = selected,
-                                        onClick = { viewModel.setTab(index) },
-                                        icon = {
+                                        IconButton(onClick = { viewModel.fetchData() }) {
                                             Icon(
-                                                if (selected) destination.selectedIcon else destination.unselectedIcon,
-                                                contentDescription = destination.label
+                                                Icons.Default.Refresh,
+                                                contentDescription = stringResource(R.string.action_refresh),
+                                                modifier = Modifier.rotate(refreshRotation)
                                             )
-                                        },
-                                        label = { Text(destination.label) },
-                                        colors = NavigationBarItemDefaults.colors(
-                                            indicatorColor = MaterialTheme.colorScheme.secondaryContainer
+                                        }
+                                    }
+                                }
+                            )
+                        }
+                    },
+                    bottomBar = {
+                        if (!isTablet && showNavCondition) {
+                            if (navHidden) {
+                                FloatingNavigationBar(
+                                    destinations = destinations,
+                                    currentTab = currentTab,
+                                    onSelect = { viewModel.setTab(it) }
+                                )
+                            } else {
+                                NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceContainer) {
+                                    destinations.forEachIndexed { index, destination ->
+                                        val selected = currentTab == index
+                                        NavigationBarItem(
+                                            selected = selected,
+                                            onClick = { viewModel.setTab(index) },
+                                            icon = {
+                                                Icon(
+                                                    if (selected) destination.selectedIcon else destination.unselectedIcon,
+                                                    contentDescription = destination.label
+                                                )
+                                            },
+                                            label = {
+                                                Text(
+                                                    text = destination.label,
+                                                    maxLines = 1,
+                                                    softWrap = false,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                            },
+                                            colors = NavigationBarItemDefaults.colors(
+                                                indicatorColor = MaterialTheme.colorScheme.secondaryContainer
+                                            )
                                         )
-                                    )
+                                    }
                                 }
                             }
                         }
                     }
-                }
-            ) { innerPadding ->
-                val contentPadding =
-                    if (!isTablet && showNavCondition && navHidden) {
-                        PaddingValues(
-                            top = innerPadding.calculateTopPadding(),
-                            bottom = 0.dp
-                        )
-                    } else {
-                        innerPadding
-                    }
-                Surface(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(contentPadding),
-                    color = MaterialTheme.colorScheme.surface
-                ) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.TopCenter
+                ) { innerPadding ->
+                    val contentPadding =
+                        if (!isTablet && showNavCondition && navHidden) {
+                            PaddingValues(
+                                top = innerPadding.calculateTopPadding(),
+                                bottom = 0.dp
+                            )
+                        } else {
+                            innerPadding
+                        }
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(contentPadding),
+                        color = MaterialTheme.colorScheme.surface
                     ) {
                         Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .widthIn(max = dpv(640.dp, 840.dp))
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.TopCenter
                         ) {
-                            HorizontalPager(
-                                state = pagerState,
-                                flingBehavior = flingBehavior,
-                                beyondViewportPageCount = 1
-                            ) { page ->
-                                when (page) {
-                                    0 -> HomeScreen(
-                                        entries = currentEntries,
-                                        isRoomFirst = isRoomFirst,
-                                        isRefreshing = isRefreshing,
-                                        hasError = uiState is UiState.Error,
-                                        lastUpdated = lastUpdated,
-                                        isOffline = isOffline,
-                                        onRefresh = { viewModel.fetchData() },
-                                        onRetry = { viewModel.fetchData() }
-                                    )
-                                    1 -> TimetableScreen(
-                                        timetable = timetable,
-                                        substitutions = currentEntries,
-                                        assignedClass = assignedClass,
-                                        isLoading = isTimetableLoading || isRefreshing,
-                                        onRefresh = { viewModel.fetchData() }
-                                    )
-                                    2 -> {
-                                        val currentUiState = uiState
-                                        if (currentUiState is UiState.Success) {
-                                            DayList(
-                                                entries = currentUiState.entries,
-                                                selectedDay = selectedDay,
-                                                cardAlpha = cardAlpha,
-                                                isRefreshing = isRefreshing,
-                                                onRefresh = { viewModel.fetchData() },
-                                                onDayClick = { day, bounds ->
-                                                    selectedDay = day
-                                                    cardRect = bounds
-                                                    showSheet = true
-                                                }
-                                            )
-                                        } else if (currentUiState is UiState.Error) {
-                                            ErrorScreen(currentUiState.message, onRetry = { viewModel.fetchData() })
-                                        } else {
-                                            Box(Modifier.fillMaxSize())
-                                        }
-                                    }
-                                    3 -> ArchiveScreen(
-                                        entries = archiveEntries,
-                                        isRoomFirst = isRoomFirst,
-                                        onRemoveGroup = { entries -> entries.forEach { viewModel.removeFromArchive(it) } },
-                                        onOpenCalendar = { showCalendar = true }
-                                    )
-                                    4 -> SettingsScreen(
-                                    isRoomFirst = isRoomFirst,
-                                    sortByPeriod = sortByPeriod,
-                                    dynamicColor = dynamicColor,
-                                    navHidden = navHidden,
-                                    selectedClasses = selectedClasses,
-                                    autoFetchEnabled = autoFetchEnabled,
-                                    autoFetchInterval = autoFetchInterval,
-                                    notificationsEnabled = notificationsEnabled,
-                                    onToggleOrder = viewModel::toggleColumnOrder,
-                                    onToggleSort = viewModel::toggleSortByPeriod,
-                                    onToggleDynamic = viewModel::toggleDynamicColor,
-                                    onToggleNavHidden = viewModel::toggleNavHidden,
-                                    onOpenThemePicker = { showThemePicker = true },
-                                    useCustomFont = useCustomFont,
-                                    fontRond = fontRond,
-                                    onToggleCustomFont = viewModel::toggleCustomFont,
-                                    onFontRondChange = { viewModel.setFontRond(it) },
-                                    onToggleAutoFetch = viewModel::toggleAutoFetch,
-                                    onSetAutoFetchInterval = { viewModel.setAutoFetchInterval(it) },
-                                    onToggleNotifications = {
-                                        if (!notificationsEnabled) {
-                                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .widthIn(max = dpv(640.dp, 840.dp))
+                            ) {
+                                HorizontalPager(
+                                    state = pagerState,
+                                    flingBehavior = flingBehavior,
+                                    beyondViewportPageCount = 1
+                                ) { page ->
+                                    when (page) {
+                                        0 -> HomeScreen(
+                                            entries = currentEntries,
+                                            isRoomFirst = isRoomFirst,
+                                            isRefreshing = isRefreshing,
+                                            hasError = uiState is UiState.Error,
+                                            lastUpdated = lastUpdated,
+                                            isOffline = isOffline,
+                                            onRefresh = { viewModel.fetchData() },
+                                            onRetry = { viewModel.fetchData() }
+                                        )
+                                        1 -> TimetableScreen(
+                                            timetable = timetable,
+                                            substitutions = currentEntries,
+                                            assignedClass = assignedClass,
+                                            isLoading = isTimetableLoading || isRefreshing,
+                                            onRefresh = { viewModel.fetchData() }
+                                        )
+                                        2 -> {
+                                            val currentUiState = uiState
+                                            if (currentUiState is UiState.Success) {
+                                                DayList(
+                                                    entries = currentUiState.entries,
+                                                    selectedDay = selectedDay,
+                                                    cardAlpha = cardAlpha,
+                                                    isRefreshing = isRefreshing,
+                                                    onRefresh = { viewModel.fetchData() },
+                                                    onDayClick = { day, bounds ->
+                                                        selectedDay = day
+                                                        cardRect = bounds
+                                                        showSheet = true
+                                                    }
+                                                )
+                                            } else if (currentUiState is UiState.Error) {
+                                                ErrorScreen(currentUiState.message, onRetry = { viewModel.fetchData() })
                                             } else {
-                                                viewModel.setNotificationsEnabled(true)
+                                                Box(Modifier.fillMaxSize())
                                             }
-                                        } else {
-                                            viewModel.setNotificationsEnabled(false)
                                         }
-                                    },
-                                    onChangeClass = viewModel::changeClass,
-                                    onLogout = viewModel::logout,
-                                    customServerUrl = customServerUrl,
-                                    onSetCustomServerUrl = viewModel::setCustomServerUrl,
-                                    webServerEnabled = webServerEnabled,
-                                    webServerUrls = webServerUrls,
-                                    onToggleWebServer = viewModel::toggleWebServer,
-                                    updateState = updateState,
-                                    onCheckUpdates = viewModel::checkForUpdates,
-                                    onDownloadUpdate = openUpdateDownload,
-                                    onAbout = { showAbout = true },
-                                    onAddClass = viewModel::addSelectedClass,
-                                    onRemoveClass = viewModel::removeSelectedClass
-                                )
+                                        3 -> SettingsScreen(
+                                            isRoomFirst = isRoomFirst,
+                                            sortByPeriod = sortByPeriod,
+                                            dynamicColor = dynamicColor,
+                                            navHidden = navHidden,
+                                            selectedClasses = selectedClasses,
+                                            autoFetchEnabled = autoFetchEnabled,
+                                            autoFetchInterval = autoFetchInterval,
+                                            notificationsEnabled = notificationsEnabled,
+                                            onToggleOrder = viewModel::toggleColumnOrder,
+                                            onToggleSort = viewModel::toggleSortByPeriod,
+                                            onToggleDynamic = viewModel::toggleDynamicColor,
+                                            onToggleNavHidden = viewModel::toggleNavHidden,
+                                            onOpenThemePicker = { showThemePicker = true },
+                                            useCustomFont = useCustomFont,
+                                            fontRond = fontRond,
+                                            onToggleCustomFont = viewModel::toggleCustomFont,
+                                            onFontRondChange = { viewModel.setFontRond(it) },
+                                            onToggleAutoFetch = viewModel::toggleAutoFetch,
+                                            onSetAutoFetchInterval = { viewModel.setAutoFetchInterval(it) },
+                                            onToggleNotifications = {
+                                                if (!notificationsEnabled) {
+                                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                                    } else {
+                                                        viewModel.setNotificationsEnabled(true)
+                                                    }
+                                                } else {
+                                                    viewModel.setNotificationsEnabled(false)
+                                                }
+                                            },
+                                            onChangeClass = viewModel::changeClass,
+                                            onLogout = viewModel::logout,
+                                            customServerUrl = customServerUrl,
+                                            onSetCustomServerUrl = viewModel::setCustomServerUrl,
+                                            webServerEnabled = webServerEnabled,
+                                            webServerUrls = webServerUrls,
+                                            onToggleWebServer = viewModel::toggleWebServer,
+                                            updateState = updateState,
+                                            onCheckUpdates = viewModel::checkForUpdates,
+                                            onDownloadUpdate = openUpdateDownload,
+                                            onAbout = { showAbout = true },
+                                            onAddClass = viewModel::addSelectedClass,
+                                            onRemoveClass = viewModel::removeSelectedClass
+                                        )
+                                    }
                                 }
                             }
                             if (showProfile && showNavCondition) {
