@@ -131,9 +131,13 @@
               <span slot="start" class="material-symbols-outlined" style="color:#81c995;">event_note</span>
               <div slot="headline">Neuer Vertretungsplan</div>
             </md-menu-item>
+            <md-menu-item id="menuAddClass">
+              <span slot="start" class="material-symbols-outlined" style="color:#fdd663;">label</span>
+              <div slot="headline">Neue Klasse</div>
+            </md-menu-item>
             <md-divider></md-divider>
             <md-menu-item id="menuTestClass">
-              <span slot="start" class="material-symbols-outlined" style="color:#fdd663;">check_circle</span>
+              <span slot="start" class="material-symbols-outlined" style="color:var(--md-sys-color-on-surface-variant);">check_circle</span>
               <div slot="headline">Klassenkürzel prüfen</div>
             </md-menu-item>
           </md-menu>
@@ -151,7 +155,11 @@
           </li>
           <li class="nav-item" id="navClasses" data-target="viewClasses">
             <span class="material-symbols-outlined">label</span>
-            Klassen & Kürzel
+            Klassen
+          </li>
+          <li class="nav-item" id="navTimetables" data-target="viewTimetables">
+            <span class="material-symbols-outlined">schedule</span>
+            Stundenpläne
           </li>
         </ul>
 
@@ -260,13 +268,36 @@
           </div>
         </div>
 
-        <!-- 3. KLASSEN & KÜRZEL SYSTEM VIEW -->
+        <!-- 3. KLASSENVERWALTUNG VIEW -->
         <div id="viewClasses" class="view-panel" style="display:none;">
           <div class="canvas-header">
             <div class="canvas-title">
-              <span class="material-symbols-outlined" style="color:#fdd663;">label</span>
-              Klassenkürzel-Standard
+              <span class="material-symbols-outlined" style="color:var(--md-sys-color-primary);">label</span>
+              Klassenverwaltung
             </div>
+            <md-filled-tonal-button id="canvasAddClassBtn">
+              Klasse anlegen
+              <span slot="icon" class="material-symbols-outlined">add</span>
+            </md-filled-tonal-button>
+          </div>
+
+          <div class="drive-table-container" style="margin-bottom: 24px;">
+            <table class="drive-table">
+              <thead>
+                <tr>
+                  <th>Klasse</th>
+                  <th>Stufe</th>
+                  <th>Schulzweig</th>
+                  <th>Klassenleitung</th>
+                  <th>Stammraum</th>
+                  <th>Schüler</th>
+                  <th style="text-align:right;">Aktionen</th>
+                </tr>
+              </thead>
+              <tbody id="classesTableBody">
+                <!-- Rendered via JS -->
+              </tbody>
+            </table>
           </div>
 
           <div class="info-card">
@@ -276,7 +307,7 @@
               • <strong>Stufe:</strong> Jahrgang (z. B. <code>5</code>, <code>6</code>, <code>7</code>, <code>8</code>, <code>9</code>, <code>10</code>)<br>
               • <strong>Zweig:</strong> immer <strong>klein</strong> (<code>a</code>, <code>b</code>, <code>c</code>, <code>d</code>, ...)<br>
               • <strong>Schulform:</strong> immer <strong>groß</strong> am Ende (<code>H</code> für Hauptschule, <code>R</code> für Realschule)<br><br>
-              <strong>Beispiele:</strong> <span class="class-chip">9aR</span> (Klasse 9, a, Realschule), <span class="class-chip">8aR</span>, <span class="class-chip">7bH</span>, <span class="class-chip">10aR</span>
+              <strong>Beispiele:</strong> <span class="class-chip">9aR</span>, <span class="class-chip">8aR</span>, <span class="class-chip">7bH</span>, <span class="class-chip">10cR</span>
             </p>
           </div>
 
@@ -290,7 +321,98 @@
           </div>
         </div>
 
+        <!-- 4. STUNDENPLANVERWALTUNG VIEW -->
+        <div id="viewTimetables" class="view-panel" style="display:none;">
+          <div class="canvas-header">
+            <div class="canvas-title">
+              <span class="material-symbols-outlined" style="color:var(--md-sys-color-primary);">schedule</span>
+              Stundenplanverwaltung
+            </div>
+            <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+              <md-outlined-select id="timetableClassSelect" label="Klasse wählen" style="min-width:180px;">
+                <!-- Filled dynamically with classes -->
+              </md-outlined-select>
+              <md-text-button id="clearTimetableBtn" style="color:var(--md-sys-color-error);">
+                <span slot="icon" class="material-symbols-outlined">delete_sweep</span>
+                Plan leeren
+              </md-text-button>
+            </div>
+          </div>
+
+          <p style="color:var(--md-sys-color-on-surface-variant); font-size:0.9rem; margin-bottom:16px;">
+            Klicke auf eine Unterrichtsstunde, um Fach, Lehrkraft und Raum direkt zu bearbeiten.
+          </p>
+
+          <div class="timetable-grid-wrapper">
+            <table class="timetable-grid">
+              <thead>
+                <tr>
+                  <th class="time-col-header">Stunde</th>
+                  <th>Montag</th>
+                  <th>Dienstag</th>
+                  <th>Mittwoch</th>
+                  <th>Donnerstag</th>
+                  <th>Freitag</th>
+                </tr>
+              </thead>
+              <tbody id="timetableGridBody">
+                <!-- Rendered dynamically via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </main>
+    </div>
+  </div>
+
+  <!-- STUDENT PORTAL (SCHÜLER-WEBVERSION) -->
+  <div id="studentPortal" style="display:none; flex-direction:column; min-height:100vh; background:var(--drive-bg);">
+    <div class="student-portal-wrapper">
+      <!-- HERO GREETING CARD -->
+      <div class="student-hero-card">
+        <div class="student-hero-left">
+          <div class="student-avatar" id="studentAvatar">S</div>
+          <div>
+            <div class="student-hero-title">Hallo, <span id="studentName">Schüler</span>! 👋</div>
+            <div class="student-hero-sub">
+              <span>Klasse: <strong id="studentClassBadge" class="class-chip">9aR</strong></span>
+              <span>•</span>
+              <span id="studentCurrentDate"></span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <md-filled-tonal-button id="studentLogoutBtn">
+            <span slot="icon" class="material-symbols-outlined">logout</span>
+            Abmelden
+          </md-filled-tonal-button>
+        </div>
+      </div>
+
+      <!-- TABS ROW: VERTRETUNGSPLAN & STUNDENPLAN -->
+      <div class="student-tabs-row">
+        <md-filter-chip id="tabStudentSubs" label="Vertretungsplan" selected>
+          <span slot="icon" class="material-symbols-outlined">event_note</span>
+        </md-filter-chip>
+        <md-filter-chip id="tabStudentTimetable" label="Mein Stundenplan">
+          <span slot="icon" class="material-symbols-outlined">schedule</span>
+        </md-filter-chip>
+      </div>
+
+      <!-- TAB CONTENT 1: VERTRETUNGSPLAN -->
+      <div id="studentSubsView" class="student-tab-content">
+        <div id="studentSubsList" class="student-card-list">
+          <!-- Dynamically filled with student-sub-card elements -->
+        </div>
+      </div>
+
+      <!-- TAB CONTENT 2: STUNDENPLAN -->
+      <div id="studentTimetableView" class="student-tab-content" style="display:none;">
+        <div class="timetable-grid-wrapper" id="studentTimetableWrapper">
+          <!-- Dynamically filled weekly timetable with live substitution highlights -->
+        </div>
+      </div>
     </div>
   </div>
 
@@ -439,6 +561,71 @@
         <md-filled-tonal-button id="confirmDeleteConfirmBtn" style="--md-sys-color-secondary-container: var(--md-sys-color-error-container); --md-sys-color-on-secondary-container: var(--md-sys-color-on-error-container);">
           Löschen
           <span slot="icon" class="material-symbols-outlined">delete</span>
+        </md-filled-tonal-button>
+      </div>
+    </div>
+  </div>
+
+  <!-- M3 MODAL: CLASS (ADD & EDIT) -->
+  <div id="classModal" class="m3-modal-overlay">
+    <div class="m3-dialog-card">
+      <div class="m3-dialog-header">
+        <span class="material-symbols-outlined m3-dialog-icon" style="color:var(--md-sys-color-primary);">label</span>
+        <h2 class="m3-dialog-title" id="classModalTitle">Klasse anlegen</h2>
+      </div>
+      <form id="classForm" class="dialog-form" onsubmit="return false;">
+        <md-outlined-text-field id="inputClassCode" label="Klassenkürzel (z. B. 9aR, 8bH) *" required supporting-text="Format: [Stufe][a-z][H/R]">
+        </md-outlined-text-field>
+        <div id="classModalNotice" style="font-size:0.8rem; margin-top:-8px; min-height:18px;"></div>
+
+        <md-outlined-text-field id="inputClassTeacher" label="Klassenlehrer (Name / Kürzel)">
+        </md-outlined-text-field>
+
+        <md-outlined-text-field id="inputClassRoom" label="Stammraum (z. B. R102)">
+        </md-outlined-text-field>
+
+        <md-outlined-select id="inputClassBranch" label="Schulzweig">
+          <md-select-option value="Realschule" selected><div slot="headline">Realschule</div></md-select-option>
+          <md-select-option value="Hauptschule"><div slot="headline">Hauptschule</div></md-select-option>
+          <md-select-option value="Gymnasium"><div slot="headline">Gymnasium</div></md-select-option>
+        </md-outlined-select>
+
+        <div id="classModalError" style="color:var(--md-sys-color-error); font-size:0.85rem; display:none;"></div>
+      </form>
+      <div class="m3-dialog-actions">
+        <md-text-button id="closeClassModal">Abbrechen</md-text-button>
+        <md-filled-tonal-button id="submitClassBtn">
+          Speichern
+          <span slot="icon" class="material-symbols-outlined">save</span>
+        </md-filled-tonal-button>
+      </div>
+    </div>
+  </div>
+
+  <!-- M3 MODAL: EDIT TIMETABLE LESSON -->
+  <div id="lessonModal" class="m3-modal-overlay">
+    <div class="m3-dialog-card" style="max-width:440px;">
+      <div class="m3-dialog-header">
+        <span class="material-symbols-outlined m3-dialog-icon" style="color:var(--md-sys-color-primary);">schedule</span>
+        <h2 class="m3-dialog-title" id="lessonModalTitle">Stunde bearbeiten</h2>
+      </div>
+      <form id="lessonForm" class="dialog-form" onsubmit="return false;">
+        <md-outlined-text-field id="inputLessonSubject" label="Fach (z. B. Mathematik, Deutsch, Sport) *" required>
+        </md-outlined-text-field>
+        <md-outlined-text-field id="inputLessonTeacher" label="Lehrkraft (Kürzel, z. B. MÜL, SCH)">
+        </md-outlined-text-field>
+        <md-outlined-text-field id="inputLessonRoom" label="Raum (z. B. R102, TH1, PHY)">
+        </md-outlined-text-field>
+      </form>
+      <div class="m3-dialog-actions">
+        <md-text-button id="deleteLessonBtn" style="color:var(--md-sys-color-error); margin-right:auto;">
+          <span slot="icon" class="material-symbols-outlined">delete</span>
+          Leeren
+        </md-text-button>
+        <md-text-button id="closeLessonModal">Abbrechen</md-text-button>
+        <md-filled-tonal-button id="submitLessonBtn">
+          Übernehmen
+          <span slot="icon" class="material-symbols-outlined">check</span>
         </md-filled-tonal-button>
       </div>
     </div>

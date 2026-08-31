@@ -663,3 +663,290 @@ table.drive-table tr:hover td {
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
   z-index: 20000;
 }
+
+/* TIMETABLE WEEKLY GRID (M3 STYLE) */
+.timetable-grid-wrapper {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  background: var(--md-sys-color-surface-container);
+}
+
+.timetable-grid {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 750px;
+}
+
+.timetable-grid th {
+  padding: 12px 14px;
+  background: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface);
+  font-family: var(--md-ref-typeface-brand);
+  font-weight: 500;
+  font-size: 0.92rem;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  text-align: center;
+}
+
+.timetable-grid th.time-col-header {
+  width: 85px;
+  min-width: 85px;
+}
+
+.timetable-grid td {
+  border: 1px solid var(--md-sys-color-outline-variant);
+  padding: 6px;
+  vertical-align: top;
+  height: 72px;
+  width: 18%;
+  background: var(--drive-canvas-bg);
+}
+
+.timetable-grid td.time-cell {
+  background: var(--md-sys-color-surface-container);
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--md-sys-color-on-surface-variant);
+  font-weight: 500;
+  padding: 8px 4px;
+  width: 85px;
+}
+
+.timetable-grid td.time-cell .period-num {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--md-sys-color-on-surface);
+}
+
+.timetable-slot {
+  height: 100%;
+  min-height: 56px;
+  border-radius: 8px;
+  padding: 6px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.timetable-slot.empty {
+  border: 1px dashed var(--md-sys-color-outline-variant);
+  background: transparent;
+  align-items: center;
+  opacity: 0.5;
+}
+
+.timetable-slot.empty:hover {
+  background: var(--md-sys-color-surface-container-high);
+  opacity: 1;
+}
+
+.timetable-slot.filled {
+  background: var(--md-sys-color-surface-container-high);
+  border: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.timetable-slot.filled:hover {
+  border-color: var(--md-sys-color-primary);
+  transform: translateY(-1px);
+}
+
+.timetable-slot .slot-subject {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--md-sys-color-on-surface);
+}
+
+.timetable-slot .slot-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.timetable-slot .slot-teacher {
+  background: var(--md-sys-color-surface-container);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.timetable-slot .slot-room {
+  font-weight: 600;
+  color: var(--md-sys-color-primary);
+}
+
+/* Substitution tag on slot */
+.timetable-slot.has-sub {
+  border-left: 3px solid var(--md-sys-color-error);
+}
+
+.timetable-slot.sub-entfall .slot-subject {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.sub-badge-mini {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  align-self: flex-start;
+  margin-top: 2px;
+}
+
+.sub-badge-entfall {
+  background: rgba(242, 184, 181, 0.25);
+  color: var(--md-sys-color-error);
+}
+
+.sub-badge-vertr {
+  background: rgba(168, 199, 250, 0.25);
+  color: var(--md-sys-color-primary);
+}
+
+/* STUDENT PORTAL LAYOUT */
+.student-portal-wrapper {
+  max-width: 960px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 20px 16px 40px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.student-hero-card {
+  background: var(--md-sys-color-surface-container);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 24px;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.student-hero-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.student-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+  font-size: 1.4rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.student-hero-title {
+  font-family: var(--md-ref-typeface-brand);
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.student-hero-sub {
+  font-size: 0.9rem;
+  color: var(--md-sys-color-on-surface-variant);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.student-tabs-row {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+  padding-bottom: 8px;
+}
+
+.student-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.student-sub-card {
+  background: var(--md-sys-color-surface-container);
+  border-radius: 18px;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.student-sub-card:hover {
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
+  transform: translateY(-1px);
+}
+
+.student-sub-card.card-entfall {
+  border-left: 6px solid var(--md-sys-color-error);
+}
+
+.student-sub-card.card-vertretung {
+  border-left: 6px solid var(--md-sys-color-primary);
+}
+
+.student-sub-card.card-raumaenderung {
+  border-left: 6px solid #fdd663;
+}
+
+.student-sub-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.student-sub-lesson-badge {
+  font-size: 0.88rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: var(--md-sys-color-surface-container-high);
+}
+
+.student-sub-subject {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface);
+}
+
+.student-sub-details {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 0.88rem;
+  color: var(--md-sys-color-on-surface-variant);
+  flex-wrap: wrap;
+}
+
+.student-sub-text {
+  background: var(--drive-canvas-bg);
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  line-height: 1.4;
+  border-left: 2px solid var(--md-sys-color-outline);
+}

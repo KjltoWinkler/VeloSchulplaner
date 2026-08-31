@@ -49,6 +49,8 @@ const loginLimiter = rateLimit({
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "data");
 const USERS_FILE = path.join(DATA_DIR, "users.json");
 const SUBS_FILE = path.join(DATA_DIR, "substitutions.json");
+const CLASSES_FILE = path.join(DATA_DIR, "classes.json");
+const TIMETABLES_FILE = path.join(DATA_DIR, "timetables.json");
 
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -166,6 +168,58 @@ const defaultSubstitutions = [
     text: "Entfall"
   }
 ];
+
+const defaultClasses = [
+  { code: "9aR", grade: 9, branch: "Realschule", teacher: "Hr. Müller (MÜL)", room: "R102" },
+  { code: "8aR", grade: 8, branch: "Realschule", teacher: "Fr. Schmidt (SCH)", room: "R204" },
+  { code: "7bH", grade: 7, branch: "Hauptschule", teacher: "Hr. Klein (KLE)", room: "R005" },
+  { code: "10cR", grade: 10, branch: "Realschule", teacher: "Fr. Weber (WEB)", room: "R108" }
+];
+
+const defaultTimetables = {
+  "9aR": {
+    "Montag": {
+      "1": { subject: "Mathematik", teacher: "MÜL", room: "R102" },
+      "2": { subject: "Mathematik", teacher: "MÜL", room: "R102" },
+      "3": { subject: "Deutsch", teacher: "WEI", room: "R102" },
+      "4": { subject: "Deutsch", teacher: "WEI", room: "R102" },
+      "5": { subject: "Physik", teacher: "BEC", room: "PHY" },
+      "6": { subject: "Englisch", teacher: "SCH", room: "R102" }
+    },
+    "Dienstag": {
+      "1": { subject: "Englisch", teacher: "SCH", room: "R102" },
+      "2": { subject: "Englisch", teacher: "SCH", room: "R102" },
+      "3": { subject: "Sport", teacher: "KLE", room: "TH1" },
+      "4": { subject: "Sport", teacher: "KLE", room: "TH1" },
+      "5": { subject: "Geschichte", teacher: "MÜL", room: "R102" },
+      "6": { subject: "Biologie", teacher: "KLE", room: "BIO" }
+    },
+    "Mittwoch": {
+      "1": { subject: "Deutsch", teacher: "WEI", room: "R102" },
+      "2": { subject: "Mathematik", teacher: "MÜL", room: "R102" },
+      "3": { subject: "Erdkunde", teacher: "WEB", room: "R102" },
+      "4": { subject: "Chemie", teacher: "BEC", room: "CH" },
+      "5": { subject: "Kunst", teacher: "GRA", room: "KUN" },
+      "6": { subject: "Kunst", teacher: "GRA", room: "KUN" }
+    },
+    "Donnerstag": {
+      "1": { subject: "Physik", teacher: "BEC", room: "PHY" },
+      "2": { subject: "Chemie", teacher: "BEC", room: "CH" },
+      "3": { subject: "Mathematik", teacher: "MÜL", room: "R102" },
+      "4": { subject: "Englisch", teacher: "SCH", room: "R102" },
+      "5": { subject: "Musik", teacher: "WAG", room: "MUS" },
+      "6": { subject: "Musik", teacher: "WAG", room: "MUS" }
+    },
+    "Freitag": {
+      "1": { subject: "Deutsch", teacher: "WEI", room: "R102" },
+      "2": { subject: "Deutsch", teacher: "WEI", room: "R102" },
+      "3": { subject: "Englisch", teacher: "SCH", room: "R102" },
+      "4": { subject: "Mathematik", teacher: "MÜL", room: "R102" },
+      "5": { subject: "Religion/Ethik", teacher: "BAU", room: "R102" },
+      "6": { subject: "Klassenstunde", teacher: "MÜL", room: "R102" }
+    }
+  }
+};
 
 function readData(file, fallback) {
   try {
@@ -343,6 +397,12 @@ app.post("/api/auth/login", loginLimiter, (req, res) => {
   });
 });
 
+// Alias for convenience
+app.post("/api/login", loginLimiter, (req, res, next) => {
+  req.url = "/api/auth/login";
+  app.handle(req, res, next);
+});
+
 app.get("/api/auth/me", requireAuth, (req, res) => {
   res.json({
     success: true,
@@ -390,14 +450,12 @@ app.get("/api/substitutions", parseUser, (req, res) => {
 app.get("/api/classes", (req, res) => {
   const allEntries = readData(SUBS_FILE, defaultSubstitutions);
   const users = readData(USERS_FILE, defaultUsers);
+  const classList = readData(CLASSES_FILE, defaultClasses);
 
   const classes = new Set();
-  allEntries.forEach((e) => {
-    if (e.className) classes.add(normalizeClassCode(e.className));
-  });
-  users.forEach((u) => {
-    if (u.assignedClass) classes.add(normalizeClassCode(u.assignedClass));
-  });
+  classList.forEach(c => { if (c.code) classes.add(normalizeClassCode(c.code)); });
+  allEntries.forEach((e) => { if (e.className) classes.add(normalizeClassCode(e.className)); });
+  users.forEach((u) => { if (u.assignedClass) classes.add(normalizeClassCode(u.assignedClass)); });
 
   res.json(Array.from(classes).filter(Boolean).sort());
 });
@@ -583,6 +641,140 @@ app.delete("/api/admin/substitutions/:id", requireAdmin, (req, res) => {
 app.post("/api/admin/substitutions/clear", requireAdmin, (req, res) => {
   writeData(SUBS_FILE, []);
   res.json({ success: true, message: "Alle Vertretungen gelöscht." });
+});
+
+// --- ADMIN CLASS MANAGEMENT ---
+app.get("/api/admin/classes", requireAdmin, (req, res) => {
+  const classes = readData(CLASSES_FILE, defaultClasses);
+  const users = readData(USERS_FILE, defaultUsers);
+
+  const result = classes.map(c => {
+    const studentCount = users.filter(u => 
+      u.role === "schueler" && 
+      u.assignedClass && 
+      u.assignedClass.toLowerCase() === c.code.toLowerCase()
+    ).length;
+    return { ...c, studentCount };
+  });
+
+  res.json(result);
+});
+
+app.post("/api/admin/classes", requireAdmin, (req, res) => {
+  const { code, grade, branch, teacher, room } = req.body;
+  if (!code) {
+    return res.status(400).json({ error: "Klassenkürzel ist erforderlich." });
+  }
+  const cleanCode = normalizeClassCode(code);
+  if (!isValidClassCode(cleanCode)) {
+    return res.status(400).json({ error: `Ungültiges Klassenkürzel "${code}". Erlaubt: z. B. 9aR, 8bH.` });
+  }
+
+  const classes = readData(CLASSES_FILE, defaultClasses);
+  if (classes.some(c => c.code.toLowerCase() === cleanCode.toLowerCase())) {
+    return res.status(400).json({ error: `Klasse "${cleanCode}" existiert bereits.` });
+  }
+
+  const newClass = {
+    code: cleanCode,
+    grade: Number(grade) || parseInt(cleanCode, 10) || 0,
+    branch: branch || (cleanCode.endsWith("R") ? "Realschule" : (cleanCode.endsWith("H") ? "Hauptschule" : "Gymnasium")),
+    teacher: teacher ? teacher.trim() : "",
+    room: room ? room.trim() : ""
+  };
+
+  classes.push(newClass);
+  writeData(CLASSES_FILE, classes);
+  res.status(201).json({ success: true, classItem: newClass });
+});
+
+app.put("/api/admin/classes/:code", requireAdmin, (req, res) => {
+  const codeParam = req.params.code.toLowerCase();
+  const { teacher, room, branch, grade } = req.body;
+
+  const classes = readData(CLASSES_FILE, defaultClasses);
+  const idx = classes.findIndex(c => c.code.toLowerCase() === codeParam);
+  if (idx === -1) {
+    return res.status(404).json({ error: "Klasse nicht gefunden." });
+  }
+
+  if (teacher !== undefined) classes[idx].teacher = teacher.trim();
+  if (room !== undefined) classes[idx].room = room.trim();
+  if (branch !== undefined) classes[idx].branch = branch.trim();
+  if (grade !== undefined) classes[idx].grade = Number(grade);
+
+  writeData(CLASSES_FILE, classes);
+  res.json({ success: true, classItem: classes[idx] });
+});
+
+app.delete("/api/admin/classes/:code", requireAdmin, (req, res) => {
+  const codeParam = req.params.code.toLowerCase();
+  let classes = readData(CLASSES_FILE, defaultClasses);
+  const initialLength = classes.length;
+  classes = classes.filter(c => c.code.toLowerCase() !== codeParam);
+
+  if (classes.length === initialLength) {
+    return res.status(404).json({ error: "Klasse nicht gefunden." });
+  }
+
+  writeData(CLASSES_FILE, classes);
+  res.json({ success: true, message: "Klasse gelöscht." });
+});
+
+// --- TIMETABLES (STUNDENPLÄNE) ---
+app.get("/api/timetables/:classCode", (req, res) => {
+  const code = req.params.classCode;
+  const timetables = readData(TIMETABLES_FILE, defaultTimetables);
+  const schedule = timetables[code] || timetables[normalizeClassCode(code)] || {};
+  res.json(schedule);
+});
+
+app.put("/api/admin/timetables/:classCode", requireAdmin, (req, res) => {
+  const code = normalizeClassCode(req.params.classCode);
+  const schedule = req.body; // { "Montag": { "1": { subject, teacher, room }, ... } }
+
+  const timetables = readData(TIMETABLES_FILE, defaultTimetables);
+  timetables[code] = schedule;
+  writeData(TIMETABLES_FILE, timetables);
+
+  res.json({ success: true, message: "Stundenplan gespeichert.", schedule });
+});
+
+// --- STUDENT DASHBOARD (SCHÜLERPORTAL) ---
+app.get("/api/student/dashboard", requireAuth, (req, res) => {
+  if (req.user.role !== "schueler") {
+    return res.status(403).json({ error: "Nur für Schülerkonten zugänglich." });
+  }
+
+  const assignedClass = req.user.assignedClass || "";
+  const allSubs = readData(SUBS_FILE, defaultSubstitutions);
+  const timetables = readData(TIMETABLES_FILE, defaultTimetables);
+  const classes = readData(CLASSES_FILE, defaultClasses);
+
+  const classInfo = classes.find(c => c.code.toLowerCase() === assignedClass.toLowerCase()) || {
+    code: assignedClass,
+    grade: parseInt(assignedClass, 10) || 0,
+    branch: "",
+    teacher: "",
+    room: ""
+  };
+  const classTimetable = timetables[assignedClass] || timetables[normalizeClassCode(assignedClass)] || {};
+  
+  const classSubs = allSubs.filter(s => 
+    s.className && (s.className.toLowerCase() === assignedClass.toLowerCase() || s.className.toLowerCase() === normalizeClassCode(assignedClass).toLowerCase())
+  );
+
+  res.json({
+    user: {
+      username: req.user.username,
+      name: req.user.name || req.user.username,
+      role: req.user.role,
+      assignedClass
+    },
+    classInfo,
+    timetable: classTimetable,
+    substitutions: classSubs
+  });
 });
 
 // SPA Fallback for client-side routing (e.g. /benutzer, /vertretungsplaene, /klassen, /login)

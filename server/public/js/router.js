@@ -1,9 +1,12 @@
 // --- ASTRA SPA ROUTER ---
+import { getStoredAdminUser } from './api.js';
 
 const ROUTES = {
-  '/benutzer': { targetId: 'viewUsers', navId: 'navUsers', title: 'Benutzer & Accounts' },
-  '/vertretungsplaene': { targetId: 'viewSubs', navId: 'navSubs', title: 'Vertretungspläne' },
-  '/klassen': { targetId: 'viewClasses', navId: 'navClasses', title: 'Klassensystem' },
+  '/benutzer': { targetId: 'viewUsers', navId: 'navUsers', title: 'Benutzer & Accounts', role: 'admin' },
+  '/vertretungsplaene': { targetId: 'viewSubs', navId: 'navSubs', title: 'Vertretungspläne', role: 'admin' },
+  '/klassen': { targetId: 'viewClasses', navId: 'navClasses', title: 'Klassenverwaltung', role: 'admin' },
+  '/stundenplaene': { targetId: 'viewTimetables', navId: 'navTimetables', title: 'Stundenpläne', role: 'admin' },
+  '/schueler': { isStudent: true, title: 'Schüler-Portal', role: 'schueler' },
   '/login': { isLogin: true, title: 'Anmeldung' }
 };
 
@@ -15,12 +18,21 @@ export function getRouteInfo(path) {
   if (clean.startsWith('/benutzer')) return { path: '/benutzer', ...ROUTES['/benutzer'] };
   if (clean.startsWith('/vertretungsplaene')) return { path: '/vertretungsplaene', ...ROUTES['/vertretungsplaene'] };
   if (clean.startsWith('/klassen')) return { path: '/klassen', ...ROUTES['/klassen'] };
+  if (clean.startsWith('/stundenplaene')) return { path: '/stundenplaene', ...ROUTES['/stundenplaene'] };
+  if (clean.startsWith('/schueler')) return { path: '/schueler', ...ROUTES['/schueler'] };
   if (clean === '/login') return { path: '/login', ...ROUTES['/login'] };
   return { path: '/benutzer', ...ROUTES['/benutzer'] };
 }
 
 export function navigateTo(path, push = true) {
-  const route = getRouteInfo(path);
+  let route = getRouteInfo(path);
+  const user = getStoredAdminUser();
+
+  // Role guard: if student tries to access admin route, redirect to /schueler
+  if (user && user.role === 'schueler' && route.role === 'admin') {
+    route = getRouteInfo('/schueler');
+  }
+
   currentPath = route.path;
 
   if (push && window.location.pathname !== route.path) {
@@ -29,14 +41,29 @@ export function navigateTo(path, push = true) {
 
   document.title = `${route.title} - Velo.Schulplaner`;
 
+  const loginOverlay = document.getElementById('loginOverlay');
+  const appContainer = document.getElementById('appContainer');
+  const studentPortal = document.getElementById('studentPortal');
+
   if (route.isLogin) {
-    document.getElementById('loginOverlay').style.display = 'flex';
-    document.getElementById('appContainer').style.display = 'none';
+    if (loginOverlay) loginOverlay.style.display = 'flex';
+    if (appContainer) appContainer.style.display = 'none';
+    if (studentPortal) studentPortal.style.display = 'none';
     return;
   }
 
-  document.getElementById('loginOverlay').style.display = 'none';
-  document.getElementById('appContainer').style.display = 'flex';
+  if (route.isStudent) {
+    if (loginOverlay) loginOverlay.style.display = 'none';
+    if (appContainer) appContainer.style.display = 'none';
+    if (studentPortal) studentPortal.style.display = 'flex';
+    window.dispatchEvent(new CustomEvent('app:navigated', { detail: { path: route.path } }));
+    return;
+  }
+
+  // Admin Portal
+  if (loginOverlay) loginOverlay.style.display = 'none';
+  if (studentPortal) studentPortal.style.display = 'none';
+  if (appContainer) appContainer.style.display = 'flex';
 
   // Update Nav Items
   document.querySelectorAll('.nav-item').forEach(item => {
@@ -52,7 +79,7 @@ export function navigateTo(path, push = true) {
 }
 
 export function initRouter() {
-  window.addEventListener('popstate', (e) => {
+  window.addEventListener('popstate', () => {
     const path = window.location.pathname;
     navigateTo(path, false);
   });
@@ -64,15 +91,21 @@ export function initRouter() {
       if (target === 'viewUsers') navigateTo('/benutzer');
       else if (target === 'viewSubs') navigateTo('/vertretungsplaene');
       else if (target === 'viewClasses') navigateTo('/klassen');
+      else if (target === 'viewTimetables') navigateTo('/stundenplaene');
     });
   });
 
-  // Brand logo click goes to /benutzer
+  // Brand logo click
   const brandLogo = document.getElementById('brandLogo');
   if (brandLogo) {
     brandLogo.addEventListener('click', (e) => {
       e.preventDefault();
-      navigateTo('/benutzer');
+      const user = getStoredAdminUser();
+      if (user && user.role === 'schueler') {
+        navigateTo('/schueler');
+      } else {
+        navigateTo('/benutzer');
+      }
     });
   }
 }

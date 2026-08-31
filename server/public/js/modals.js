@@ -20,13 +20,24 @@ export let userDialog;
 export let editUserDialog;
 export let subDialog;
 export let confirmDeleteDialog;
-let onConfirmDeleteCallback = null;
+export let classDialog;
+export let lessonDialog;
 
-export function initModals({ onUserSaved, onSubSaved, getUsersList }) {
+let onConfirmDeleteCallback = null;
+let onClassSavedCallback = null;
+let onLessonSavedCallback = null;
+let currentEditingClass = null;
+let currentEditingLesson = null;
+
+export function initModals({ onUserSaved, onSubSaved, onClassSaved, onLessonSaved, getUsersList }) {
   userDialog = createM3Modal('addUserModal');
   editUserDialog = createM3Modal('editUserModal');
   subDialog = createM3Modal('addSubModal');
   confirmDeleteDialog = createM3Modal('confirmDeleteModal');
+  classDialog = createM3Modal('classModal');
+  lessonDialog = createM3Modal('lessonModal');
+  onClassSavedCallback = onClassSaved;
+  onLessonSavedCallback = onLessonSaved;
 
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
@@ -269,6 +280,126 @@ export function initModals({ onUserSaved, onSubSaved, getUsersList }) {
       errEl.style.display = 'block';
     }
   });
+
+  // --- CLASS MODAL HANDLERS ---
+  const closeClassBtn = document.getElementById('closeClassModal');
+  if (closeClassBtn) closeClassBtn.addEventListener('click', () => classDialog.close());
+
+  const inputClassCode = document.getElementById('inputClassCode');
+  const classModalNotice = document.getElementById('classModalNotice');
+  if (inputClassCode && classModalNotice) {
+    inputClassCode.addEventListener('input', (e) => {
+      const val = e.target.value.trim();
+      if (!val) { classModalNotice.textContent = ''; return; }
+      const norm = normalizeClassCode(val);
+      if (isValidClassCode(norm)) {
+        classModalNotice.innerHTML = `<span style="color:#81c995;">✓ Gültig: <strong>${norm}</strong></span>`;
+      } else {
+        classModalNotice.innerHTML = `<span style="color:var(--md-sys-color-error);">✗ Ungültig (z. B. 9aR, 8bH)</span>`;
+      }
+    });
+  }
+
+  const submitClassBtn = document.getElementById('submitClassBtn');
+  if (submitClassBtn) {
+    submitClassBtn.addEventListener('click', async () => {
+      const rawCode = document.getElementById('inputClassCode').value.trim();
+      const teacher = document.getElementById('inputClassTeacher').value.trim();
+      const room = document.getElementById('inputClassRoom').value.trim();
+      const branch = document.getElementById('inputClassBranch').value;
+      const errEl = document.getElementById('classModalError');
+      errEl.style.display = 'none';
+
+      if (!currentEditingClass) {
+        if (!rawCode) {
+          errEl.textContent = 'Klassenkürzel ist erforderlich.';
+          errEl.style.display = 'block';
+          return;
+        }
+        const code = normalizeClassCode(rawCode);
+        if (!isValidClassCode(code)) {
+          errEl.textContent = `Ungültiges Klassenkürzel "${rawCode}". Erlaubt: z. B. 9aR, 8bH.`;
+          errEl.style.display = 'block';
+          return;
+        }
+
+        try {
+          const res = await authFetch('/api/admin/classes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code, teacher, room, branch })
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            errEl.textContent = data.error || 'Fehler beim Anlegen der Klasse.';
+            errEl.style.display = 'block';
+            return;
+          }
+          classDialog.close();
+          showToast(`Klasse "${code}" erfolgreich erstellt.`);
+          if (onClassSavedCallback) onClassSavedCallback();
+        } catch (e) {
+          errEl.textContent = 'Verbindungsfehler.';
+          errEl.style.display = 'block';
+        }
+      } else {
+        // Editing existing class
+        try {
+          const res = await authFetch(`/api/admin/classes/${encodeURIComponent(currentEditingClass.code)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ teacher, room, branch })
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            errEl.textContent = data.error || 'Fehler beim Bearbeiten der Klasse.';
+            errEl.style.display = 'block';
+            return;
+          }
+          classDialog.close();
+          showToast(`Klasse "${currentEditingClass.code}" aktualisiert.`);
+          if (onClassSavedCallback) onClassSavedCallback();
+        } catch (e) {
+          errEl.textContent = 'Verbindungsfehler.';
+          errEl.style.display = 'block';
+        }
+      }
+    });
+  }
+
+  // --- LESSON MODAL HANDLERS ---
+  const closeLessonBtn = document.getElementById('closeLessonModal');
+  if (closeLessonBtn) closeLessonBtn.addEventListener('click', () => lessonDialog.close());
+
+  const submitLessonBtn = document.getElementById('submitLessonBtn');
+  if (submitLessonBtn) {
+    submitLessonBtn.addEventListener('click', () => {
+      const subject = document.getElementById('inputLessonSubject').value.trim();
+      const teacher = document.getElementById('inputLessonTeacher').value.trim();
+      const room = document.getElementById('inputLessonRoom').value.trim();
+
+      if (onLessonSavedCallback && currentEditingLesson) {
+        onLessonSavedCallback({
+          ...currentEditingLesson,
+          lessonData: { subject, teacher, room }
+        });
+      }
+      lessonDialog.close();
+    });
+  }
+
+  const deleteLessonBtn = document.getElementById('deleteLessonBtn');
+  if (deleteLessonBtn) {
+    deleteLessonBtn.addEventListener('click', () => {
+      if (onLessonSavedCallback && currentEditingLesson) {
+        onLessonSavedCallback({
+          ...currentEditingLesson,
+          lessonData: null
+        });
+      }
+      lessonDialog.close();
+    });
+  }
 }
 
 export function openConfirmDeleteDialog(title, message, onConfirm) {
@@ -313,4 +444,53 @@ export function openSubModal() {
   document.getElementById('inputSubText').value = '';
   document.getElementById('subModalError').style.display = 'none';
   subDialog.show();
+}
+
+export function openClassModal(classItem = null) {
+  currentEditingClass = classItem;
+  const titleEl = document.getElementById('classModalTitle');
+  const codeEl = document.getElementById('inputClassCode');
+  const teacherEl = document.getElementById('inputClassTeacher');
+  const roomEl = document.getElementById('inputClassRoom');
+  const branchEl = document.getElementById('inputClassBranch');
+  const noticeEl = document.getElementById('classModalNotice');
+  const errEl = document.getElementById('classModalError');
+
+  if (errEl) errEl.style.display = 'none';
+  if (noticeEl) noticeEl.textContent = '';
+
+  if (classItem) {
+    if (titleEl) titleEl.textContent = `Klasse ${classItem.code} bearbeiten`;
+    if (codeEl) {
+      codeEl.value = classItem.code;
+      codeEl.disabled = true;
+    }
+    if (teacherEl) teacherEl.value = classItem.teacher || '';
+    if (roomEl) roomEl.value = classItem.room || '';
+    if (branchEl) branchEl.value = classItem.branch || 'Realschule';
+  } else {
+    if (titleEl) titleEl.textContent = 'Neue Klasse anlegen';
+    if (codeEl) {
+      codeEl.value = '';
+      codeEl.disabled = false;
+    }
+    if (teacherEl) teacherEl.value = '';
+    if (roomEl) roomEl.value = '';
+    if (branchEl) branchEl.value = 'Realschule';
+  }
+  classDialog.show();
+}
+
+export function openLessonModal(day, period, currentData, onSave) {
+  currentEditingLesson = { day, period };
+  onLessonSavedCallback = onSave;
+
+  const titleEl = document.getElementById('lessonModalTitle');
+  if (titleEl) titleEl.textContent = `${day}, ${period}. Stunde bearbeiten`;
+
+  document.getElementById('inputLessonSubject').value = currentData?.subject || '';
+  document.getElementById('inputLessonTeacher').value = currentData?.teacher || '';
+  document.getElementById('inputLessonRoom').value = currentData?.room || '';
+
+  lessonDialog.show();
 }

@@ -1,4 +1,4 @@
-// --- ASTRA ADMIN MAIN APP ENTRYPOINT ---
+// --- ASTRA MAIN APP ENTRYPOINT ---
 
 import {
   getAuthToken,
@@ -22,21 +22,32 @@ import {
   openUserModal,
   openEditUserModal,
   openSubModal,
-  openConfirmDeleteDialog
+  openConfirmDeleteDialog,
+  openClassModal,
+  openLessonModal
 } from './modals.js';
 
 let usersList = [];
 let subsList = [];
+let classesList = [];
+let currentTimetable = {};
+let selectedTimetableClass = '';
+let studentData = null;
+
 let currentRoleFilter = 'all';
 let currentClassFilter = '';
+let currentSubClassFilter = 'all';
 
-// --- LOGIN SCREEN ---
+// --- AUTH SCREENS ---
 function showLoginScreen() {
   setAuthToken(null);
   setStoredAdminUser(null);
-  document.getElementById('loginUsername').value = 'admin';
-  document.getElementById('loginPassword').value = '';
-  document.getElementById('loginError').style.display = 'none';
+  const uInput = document.getElementById('loginUsername');
+  const pInput = document.getElementById('loginPassword');
+  if (uInput) uInput.value = '';
+  if (pInput) pInput.value = '';
+  const errEl = document.getElementById('loginError');
+  if (errEl) errEl.style.display = 'none';
   navigateTo('/login');
 }
 
@@ -47,9 +58,9 @@ function showAppScreen(user) {
   if (uNameEl) uNameEl.textContent = displayUser.name || displayUser.username;
   if (uAvatarEl) uAvatarEl.textContent = (displayUser.name || displayUser.username).charAt(0).toUpperCase();
 
-  // If on /login or root, navigate to /benutzer
+  // If on /login or root or student route, navigate to /benutzer
   const path = window.location.pathname;
-  if (path === '/login' || path === '/' || path === '') {
+  if (path === '/login' || path === '/' || path === '' || path === '/schueler') {
     navigateTo('/benutzer');
   } else {
     navigateTo(path, false);
@@ -57,6 +68,163 @@ function showAppScreen(user) {
 
   loadUsers();
   loadSubs();
+  loadClasses();
+}
+
+function showStudentScreen(user) {
+  const displayUser = user || { name: 'Schüler', username: 'schueler' };
+  const sAvatar = document.getElementById('studentAvatar');
+  const sName = document.getElementById('studentName');
+  const sClassBadge = document.getElementById('studentClassBadge');
+  const sDate = document.getElementById('studentCurrentDate');
+
+  if (sAvatar) sAvatar.textContent = (displayUser.name || displayUser.username).charAt(0).toUpperCase();
+  if (sName) sName.textContent = displayUser.name || displayUser.username;
+  if (sClassBadge) sClassBadge.textContent = displayUser.assignedClass || 'Ohne Klasse';
+  if (sDate) {
+    sDate.textContent = new Date().toLocaleDateString('de-DE', {
+      weekday: 'long',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  }
+
+  navigateTo('/schueler');
+  loadStudentDashboard();
+}
+
+// --- STUDENT PORTAL LOGIC ---
+async function loadStudentDashboard() {
+  try {
+    const res = await authFetch('/api/student/dashboard');
+    const data = await res.json();
+    studentData = data;
+    renderStudentSubs(data.substitutions || []);
+    renderStudentTimetable(data.timetable || {}, data.substitutions || []);
+  } catch (e) {
+    console.error('Fehler beim Laden des Schüler-Dashboards', e);
+  }
+}
+
+function renderStudentSubs(subs) {
+  const container = document.getElementById('studentSubsList');
+  if (!container) return;
+  container.innerHTML = '';
+
+  if (!subs || subs.length === 0) {
+    container.innerHTML = `
+      <div class="student-sub-card" style="text-align:center; padding:36px 20px; align-items:center;">
+        <span class="material-symbols-outlined" style="font-size:48px; color:#81c995; margin-bottom:8px;">check_circle</span>
+        <h3 style="font-family:var(--md-ref-typeface-brand); font-size:1.2rem; margin-bottom:4px;">Keine Vertretungen!</h3>
+        <p style="color:var(--md-sys-color-on-surface-variant); font-size:0.92rem;">Für deine Klasse findet der Unterricht wie im regulären Stundenplan statt.</p>
+      </div>
+    `;
+    return;
+  }
+
+  subs.forEach(s => {
+    const card = document.createElement('div');
+    const artLower = (s.art || '').toLowerCase();
+    let artClass = 'card-vertretung';
+    let artColor = 'var(--md-sys-color-primary)';
+    if (artLower.includes('entfall')) {
+      artClass = 'card-entfall';
+      artColor = 'var(--md-sys-color-error)';
+    } else if (artLower.includes('raum')) {
+      artClass = 'card-raumaenderung';
+      artColor = '#fdd663';
+    }
+
+    card.className = `student-sub-card ${artClass}`;
+    card.innerHTML = `
+      <div class="student-sub-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="student-sub-lesson-badge">${s.lesson}. Stunde</span>
+          <span class="student-sub-subject">${s.subject}</span>
+        </div>
+        <span class="role-badge" style="background:${artColor}22; color:${artColor}; border:1px solid ${artColor}66;">${s.art}</span>
+      </div>
+      <div class="student-sub-details">
+        <span>📅 ${s.day}</span>
+        <span>🚪 Raum: <strong>${s.room || '—'}</strong></span>
+        ${s.vertrVon ? `<span>👤 Vertreter: <strong>${s.vertrVon}</strong> ${s.nach ? `(für ${s.nach})` : ''}</span>` : ''}
+      </div>
+      ${s.text ? `<div class="student-sub-text">📝 <strong>Hinweis:</strong> ${s.text}</div>` : ''}
+    `;
+    container.appendChild(card);
+  });
+}
+
+function renderStudentTimetable(timetable, substitutions = []) {
+  const wrapper = document.getElementById('studentTimetableWrapper');
+  if (!wrapper) return;
+
+  const days = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag'];
+  const times = [
+    '07:55 - 08:40',
+    '08:45 - 09:30',
+    '09:50 - 10:35',
+    '10:40 - 11:25',
+    '11:45 - 12:30',
+    '12:35 - 13:20',
+    '13:30 - 14:15',
+    '14:20 - 15:05'
+  ];
+
+  let html = `
+    <table class="timetable-grid">
+      <thead>
+        <tr>
+          <th class="time-col-header">Stunde</th>
+          ${days.map(d => `<th>${d}</th>`).join('')}
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  for (let p = 1; p <= 8; p++) {
+    html += `<tr><td class="time-cell"><div class="period-num">${p}</div><div>${times[p - 1]}</div></td>`;
+    days.forEach(day => {
+      const slot = timetable[day] && timetable[day][p];
+      const sub = substitutions.find(s => {
+        const lessonStr = String(s.lesson || '');
+        const matchLesson = lessonStr.includes(String(p));
+        const dayStr = String(s.day || '').toLowerCase();
+        const matchDay = dayStr.includes(day.toLowerCase());
+        return matchLesson && matchDay;
+      });
+
+      if (slot && slot.subject) {
+        const isEntfall = sub && (sub.art || '').toLowerCase().includes('entfall');
+        const hasSub = !!sub;
+        let subBadge = '';
+        if (sub) {
+          if (isEntfall) subBadge = `<div class="sub-badge-mini sub-badge-entfall">Entfall</div>`;
+          else subBadge = `<div class="sub-badge-mini sub-badge-vertr">${sub.art || 'Vertretung'} (${sub.room || slot.room})</div>`;
+        }
+
+        html += `
+          <td>
+            <div class="timetable-slot filled ${hasSub ? 'has-sub' : ''} ${isEntfall ? 'sub-entfall' : ''}">
+              <div class="slot-subject">${slot.subject}</div>
+              <div class="slot-meta">
+                <span class="slot-teacher">${sub && sub.vertrVon ? sub.vertrVon : (slot.teacher || '—')}</span>
+                <span class="slot-room">${sub && sub.room && sub.room !== '---' ? sub.room : (slot.room || '')}</span>
+              </div>
+              ${subBadge}
+            </div>
+          </td>
+        `;
+      } else {
+        html += `<td><div class="timetable-slot empty"></div></td>`;
+      }
+    });
+    html += `</tr>`;
+  }
+
+  html += `</tbody></table>`;
+  wrapper.innerHTML = html;
 }
 
 // --- DATA LOADING & STATS ---
@@ -68,34 +236,12 @@ async function loadUsers() {
     updateStats();
     populateClassDropdown();
   } catch (err) {
-    console.error("Fehler beim Laden der Benutzer:", err);
+    console.error('Fehler beim Laden der Benutzer:', err);
   }
 }
 
-async function loadSubs() {
-  try {
-    const res = await authFetch('/api/admin/substitutions');
-    subsList = await res.json();
-    renderSubs();
-    updateStats();
-  } catch (err) {
-    console.error("Fehler beim Laden der Vertretungen:", err);
-  }
-}
-
-function updateStats() {
-  document.getElementById('statTotalUsers').textContent = usersList.length;
-  document.getElementById('statStudents').textContent = usersList.filter(u => u.role === 'schueler').length;
-  document.getElementById('statTeachers').textContent = usersList.filter(u => u.role === 'lehrer').length;
-
-  const classes = new Set(usersList.map(u => u.assignedClass).filter(Boolean));
-  document.getElementById('statClasses').textContent = classes.size;
-  document.getElementById('statSubs').textContent = subsList.length;
-}
-
-// --- USERS TABLE RENDERING ---
 function renderUsers() {
-  const search = (document.getElementById('globalSearchInput').value || '').toLowerCase().trim();
+  const search = (document.getElementById('globalSearchInput')?.value || '').toLowerCase().trim();
   const tbody = document.getElementById('userTableBody');
   if (!tbody) return;
   tbody.innerHTML = '';
@@ -129,7 +275,7 @@ function renderUsers() {
           <md-icon-button class="toggle-pwd-btn" data-target="pwdVal_${idx}" title="Passwort aufdecken/verbergen">
             <span class="material-symbols-outlined" style="font-size:18px;">visibility</span>
           </md-icon-button>
-          <md-icon-button class="copy-creds-btn" data-username="${u.username}" data-password="${u.initialPassword || ''}" data-class="${u.assignedClass || ''}" title="Zugangsdaten für Zettel/Ausgabe kopieren">
+          <md-icon-button class="copy-creds-btn" data-username="${u.username}" data-password="${u.initialPassword || ''}" data-class="${u.assignedClass || ''}" title="Zugangsdaten kopieren">
             <span class="material-symbols-outlined" style="font-size:18px;">content_copy</span>
           </md-icon-button>
         </div>
@@ -175,7 +321,6 @@ function renderUsers() {
     }
   });
 
-  // Toggle Password Masking / Revealing
   document.querySelectorAll('.toggle-pwd-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const targetId = btn.getAttribute('data-target');
@@ -194,7 +339,6 @@ function renderUsers() {
     });
   });
 
-  // Copy Credentials Handler (Buttons & Menu Items)
   const copyCreds = (uname, pwd, cls) => {
     let text = `Benutzername: ${uname}\nPasswort: ${pwd}`;
     if (cls) text += `\nKlasse: ${cls}`;
@@ -212,7 +356,6 @@ function renderUsers() {
     });
   });
 
-  // Edit User Handler
   document.querySelectorAll('.action-edit-user').forEach(btn => {
     btn.addEventListener('click', () => {
       const uname = btn.getAttribute('data-username');
@@ -220,7 +363,6 @@ function renderUsers() {
     });
   });
 
-  // Delete User Handler via Material 3 modal
   document.querySelectorAll('.action-delete-user').forEach(btn => {
     btn.addEventListener('click', () => {
       const uname = btn.getAttribute('data-username');
@@ -228,7 +370,7 @@ function renderUsers() {
         `Benutzer "${uname}" löschen?`,
         `Möchtest du das Benutzerkonto "${uname}" wirklich unwiderruflich löschen?`,
         async () => {
-          await authFetch(`/api/admin/users/${uname}`, { method: 'DELETE' });
+          await authFetch(`/api/admin/users/${encodeURIComponent(uname)}`, { method: 'DELETE' });
           showToast(`Benutzer "${uname}" gelöscht.`);
           loadUsers();
         }
@@ -237,16 +379,25 @@ function renderUsers() {
   });
 }
 
-// --- SUBSTITUTIONS TABLE RENDERING ---
+// --- SUBSTITUTIONS LOGIC ---
+async function loadSubs() {
+  try {
+    const res = await authFetch('/api/substitutions');
+    const data = await res.json();
+    subsList = data.entries || [];
+    renderSubs();
+    updateStats();
+  } catch (err) {
+    console.error('Fehler beim Laden der Vertretungen:', err);
+  }
+}
+
 function renderSubs() {
   const tbody = document.getElementById('subsTableBody');
   if (!tbody) return;
   tbody.innerHTML = '';
 
-  const classFilter = (document.getElementById('subClassFilter').value || '').trim().toLowerCase();
-  const filtered = subsList.filter(s => {
-    return !classFilter || (s.className && s.className.toLowerCase().includes(classFilter));
-  });
+  const filtered = subsList.filter(s => currentSubClassFilter === 'all' || s.className.toLowerCase() === currentSubClassFilter.toLowerCase());
 
   if (filtered.length === 0) {
     tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:32px; color:var(--md-sys-color-outline);">Keine Vertretungen eingetragen</td></tr>`;
@@ -264,7 +415,7 @@ function renderSubs() {
       <td>${s.lesson}</td>
       <td><strong>${s.subject}</strong></td>
       <td><span class="role-badge role-lehrer">${s.art}</span></td>
-      <td>${s.room}</td>
+      <td>${s.room || '—'}</td>
       <td>${s.vertrVon ? `${s.vertrVon} → ${s.nach || '?'}` : '—'}</td>
       <td>${s.text || '—'}</td>
       <td>
@@ -301,9 +452,9 @@ function renderSubs() {
       const name = btn.getAttribute('data-name');
       openConfirmDeleteDialog(
         'Vertretung löschen?',
-        `Möchtest du den Vertretungseintrag "${name}" wirklich löschen?`,
+        `Möchtest du die Vertretung für "${name}" wirklich löschen?`,
         async () => {
-          await authFetch(`/api/admin/substitutions/${id}`, { method: 'DELETE' });
+          await authFetch(`/api/admin/substitutions/${encodeURIComponent(id)}`, { method: 'DELETE' });
           showToast('Vertretungseintrag gelöscht.');
           loadSubs();
         }
@@ -312,69 +463,254 @@ function renderSubs() {
   });
 }
 
-function populateClassDropdown() {
-  const select = document.getElementById('userClassFilterDropdown');
-  if (!select) return;
-  const classes = Array.from(new Set(usersList.map(u => u.assignedClass).filter(Boolean))).sort();
-
-  select.innerHTML = '<md-select-option value=""><div slot="headline">Alle Klassen</div></md-select-option>';
-  classes.forEach(c => {
-    const opt = document.createElement('md-select-option');
-    opt.value = c;
-    opt.innerHTML = `<div slot="headline">${c}</div>`;
-    select.appendChild(opt);
-  });
+// --- KLASSENVERWALTUNG LOGIC ---
+async function loadClasses() {
+  try {
+    const res = await authFetch('/api/admin/classes');
+    classesList = await res.json();
+    renderClasses();
+    populateTimetableClassDropdown();
+    populateClassDropdown();
+    updateStats();
+  } catch (e) {
+    console.error('Fehler beim Laden der Klassen:', e);
+  }
 }
 
-// --- CLASS CODE TESTER ---
-function testClass() {
-  const input = document.getElementById('testClassInput');
-  const result = document.getElementById('testClassResult');
-  const code = (input.value || '').trim();
+function renderClasses() {
+  const tbody = document.getElementById('classesTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
 
-  if (!code) {
-    result.style.display = 'none';
+  if (classesList.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:32px; color:var(--md-sys-color-outline);">Keine Klassen angelegt</td></tr>`;
     return;
   }
 
-  const normalized = normalizeClassCode(code);
-  const valid = isValidClassCode(normalized);
+  classesList.forEach(c => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><span class="class-chip" style="font-size:0.9rem;">${c.code}</span></td>
+      <td><strong>${c.grade || '—'}</strong></td>
+      <td><span class="role-badge role-schueler">${c.branch || 'Realschule'}</span></td>
+      <td>${c.teacher || '—'}</td>
+      <td>${c.room ? `<strong style="color:var(--md-sys-color-primary);">${c.room}</strong>` : '—'}</td>
+      <td><strong>${c.studentCount || 0}</strong> Schüler</td>
+      <td>
+        <div class="row-actions">
+          <md-text-button class="btn-open-timetable" data-code="${c.code}" title="Stundenplan dieser Klasse öffnen">
+            <span slot="icon" class="material-symbols-outlined">schedule</span>
+            Stundenplan
+          </md-text-button>
+          <md-icon-button class="btn-edit-class" data-code="${c.code}" title="Klasse bearbeiten">
+            <span class="material-symbols-outlined" style="color:var(--md-sys-color-primary);">edit</span>
+          </md-icon-button>
+          <md-icon-button class="btn-delete-class" data-code="${c.code}" title="Klasse löschen">
+            <span class="material-symbols-outlined" style="color:var(--md-sys-color-error);">delete</span>
+          </md-icon-button>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
 
-  result.style.display = 'flex';
-  if (valid) {
-    result.className = 'test-result-box valid';
-    result.style.cssText = 'display:flex; align-items:center; gap:8px; padding:16px; border-radius:12px; background:rgba(129, 201, 149, 0.15); color:#81c995; border:1px solid rgba(129, 201, 149, 0.4); margin-top:16px;';
-    result.innerHTML = `<span class="material-symbols-outlined">check_circle</span> <div><strong>Gültiges Klassenkürzel!</strong><br>Format: <code>${normalized}</code></div>`;
-  } else {
-    result.className = 'test-result-box invalid';
-    result.style.cssText = 'display:flex; align-items:center; gap:8px; padding:16px; border-radius:12px; background:rgba(242, 184, 181, 0.15); color:var(--md-sys-color-error); border:1px solid rgba(242, 184, 181, 0.4); margin-top:16px;';
-    result.innerHTML = `<span class="material-symbols-outlined">error</span> <div><strong>Ungültiges Format.</strong><br>Beispiele: <code>9aR</code> (9. Klasse Realschule), <code>8bH</code> (8. Klasse Hauptschule).</div>`;
+  tbody.querySelectorAll('.btn-open-timetable').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const code = btn.getAttribute('data-code');
+      selectedTimetableClass = code;
+      const sel = document.getElementById('timetableClassSelect');
+      if (sel) sel.value = code;
+      loadTimetableForClass(code);
+      navigateTo('/stundenplaene');
+    });
+  });
+
+  tbody.querySelectorAll('.btn-edit-class').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const code = btn.getAttribute('data-code');
+      const item = classesList.find(c => c.code === code);
+      if (item) openClassModal(item);
+    });
+  });
+
+  tbody.querySelectorAll('.btn-delete-class').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const code = btn.getAttribute('data-code');
+      openConfirmDeleteDialog(
+        `Klasse "${code}" löschen?`,
+        `Möchtest du die Klasse "${code}" wirklich entfernen? Benutzerkonten dieser Klasse bleiben erhalten.`,
+        async () => {
+          await authFetch(`/api/admin/classes/${encodeURIComponent(code)}`, { method: 'DELETE' });
+          showToast(`Klasse "${code}" gelöscht.`);
+          loadClasses();
+        }
+      );
+    });
+  });
+}
+
+// --- STUNDENPLANVERWALTUNG LOGIC ---
+function populateTimetableClassDropdown() {
+  const select = document.getElementById('timetableClassSelect');
+  if (!select) return;
+  select.innerHTML = '';
+
+  if (classesList.length === 0) {
+    select.innerHTML = '<md-select-option value=""><div slot="headline">Keine Klassen vorhanden</div></md-select-option>';
+    return;
+  }
+
+  classesList.forEach((c, idx) => {
+    const opt = document.createElement('md-select-option');
+    opt.value = c.code;
+    if ((!selectedTimetableClass && idx === 0) || selectedTimetableClass === c.code) {
+      opt.setAttribute('selected', '');
+      if (!selectedTimetableClass) selectedTimetableClass = c.code;
+    }
+    opt.innerHTML = `<div slot="headline">${c.code} (${c.branch || 'Klasse'})</div>`;
+    select.appendChild(opt);
+  });
+
+  if (selectedTimetableClass) {
+    loadTimetableForClass(selectedTimetableClass);
   }
 }
 
-// --- INITIALIZE APPLICATION ---
-function initApp() {
+async function loadTimetableForClass(classCode) {
+  if (!classCode) return;
+  selectedTimetableClass = classCode;
+  try {
+    const res = await authFetch(`/api/timetables/${encodeURIComponent(classCode)}`);
+    currentTimetable = await res.json() || {};
+    renderTimetableGrid();
+  } catch (e) {
+    console.error('Fehler beim Laden des Stundenplans:', e);
+  }
+}
+
+function renderTimetableGrid() {
+  const tbody = document.getElementById('timetableGridBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  const days = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag'];
+  const times = [
+    '07:55 - 08:40',
+    '08:45 - 09:30',
+    '09:50 - 10:35',
+    '10:40 - 11:25',
+    '11:45 - 12:30',
+    '12:35 - 13:20',
+    '13:30 - 14:15',
+    '14:20 - 15:05'
+  ];
+
+  for (let p = 1; p <= 8; p++) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="time-cell"><div class="period-num">${p}</div><div>${times[p - 1]}</div></td>`;
+
+    days.forEach(day => {
+      const td = document.createElement('td');
+      const slot = currentTimetable[day] && currentTimetable[day][p];
+
+      if (slot && slot.subject) {
+        td.innerHTML = `
+          <div class="timetable-slot filled" data-day="${day}" data-period="${p}">
+            <div class="slot-subject">${slot.subject}</div>
+            <div class="slot-meta">
+              <span class="slot-teacher">${slot.teacher || '—'}</span>
+              <span class="slot-room">${slot.room || ''}</span>
+            </div>
+          </div>
+        `;
+      } else {
+        td.innerHTML = `
+          <div class="timetable-slot empty" data-day="${day}" data-period="${p}" title="Stunde hinzufügen">
+            <span class="material-symbols-outlined" style="font-size:18px;">add</span>
+          </div>
+        `;
+      }
+
+      td.querySelector('.timetable-slot').addEventListener('click', () => {
+        openLessonModal(day, p, slot || {}, async ({ day: d, period: per, lessonData }) => {
+          if (!currentTimetable[d]) currentTimetable[d] = {};
+          if (lessonData && lessonData.subject) {
+            currentTimetable[d][per] = lessonData;
+          } else {
+            delete currentTimetable[d][per];
+          }
+          await authFetch(`/api/admin/timetables/${encodeURIComponent(selectedTimetableClass)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(currentTimetable)
+          });
+          showToast(`Stundenplan für ${selectedTimetableClass} gespeichert.`);
+          renderTimetableGrid();
+        });
+      });
+
+      tr.appendChild(td);
+    });
+
+    tbody.appendChild(tr);
+  }
+}
+
+// --- STATS & DROPDOWNS ---
+function updateStats() {
+  const schuelerCount = usersList.filter(u => u.role === 'schueler').length;
+  const lehrerCount = usersList.filter(u => u.role === 'lehrer').length;
+  const statsEl = document.getElementById('statsSummary');
+  if (statsEl) {
+    statsEl.textContent = `${schuelerCount} Schüler, ${lehrerCount} Lehrer, ${classesList.length} Klassen`;
+  }
+}
+
+function populateClassDropdown() {
+  const dropdown = document.getElementById('userClassFilterDropdown');
+  if (!dropdown) return;
+  const classes = new Set();
+  usersList.forEach(u => {
+    if (u.assignedClass) classes.add(normalizeClassCode(u.assignedClass));
+  });
+  classesList.forEach(c => {
+    if (c.code) classes.add(normalizeClassCode(c.code));
+  });
+
+  const sorted = Array.from(classes).sort();
+  let html = '<md-select-option value="" selected><div slot="headline">Alle Klassen</div></md-select-option>';
+  sorted.forEach(cls => {
+    html += `<md-select-option value="${cls}"><div slot="headline">${cls}</div></md-select-option>`;
+  });
+  dropdown.innerHTML = html;
+}
+
+// --- BOOTSTRAP APP ---
+export function initApp() {
   initRouter();
+
   initModals({
-    onUserSaved: loadUsers,
-    onSubSaved: loadSubs,
+    onUserSaved: () => loadUsers(),
+    onSubSaved: () => loadSubs(),
+    onClassSaved: () => loadClasses(),
+    onLessonSaved: () => renderTimetableGrid(),
     getUsersList: () => usersList
   });
 
-  // "+ Neu" Menu
-  const newBtn = document.getElementById('driveNewBtn');
+  // "+ Neu" Button Menu
+  const driveNewBtn = document.getElementById('driveNewBtn');
   const newMenu = document.getElementById('newMenu');
-  if (newBtn && newMenu) {
-    newBtn.addEventListener('click', () => {
+  if (driveNewBtn && newMenu) {
+    driveNewBtn.addEventListener('click', () => {
       newMenu.open = !newMenu.open;
     });
   }
 
-  // Header User Menu
-  const headerUserBtn = document.getElementById('headerUserMenuBtn');
+  // Header User Menu & Actions
+  const headerUserMenuBtn = document.getElementById('headerUserMenuBtn');
   const headerUserMenu = document.getElementById('headerUserMenu');
-  if (headerUserBtn && headerUserMenu) {
-    headerUserBtn.addEventListener('click', () => {
+  if (headerUserMenuBtn && headerUserMenu) {
+    headerUserMenuBtn.addEventListener('click', () => {
       headerUserMenu.open = !headerUserMenu.open;
     });
   }
@@ -384,11 +720,17 @@ function initApp() {
     menuLogoutItem.addEventListener('click', () => showLoginScreen());
   }
 
+  const studentLogoutBtn = document.getElementById('studentLogoutBtn');
+  if (studentLogoutBtn) {
+    studentLogoutBtn.addEventListener('click', () => showLoginScreen());
+  }
+
   const refreshBtn = document.getElementById('headerRefreshBtn');
   if (refreshBtn) {
     refreshBtn.addEventListener('click', () => {
       loadUsers();
       loadSubs();
+      loadClasses();
       showToast('Daten aktualisiert');
     });
   }
@@ -399,11 +741,66 @@ function initApp() {
   }
 
   // Modals Open Triggers
-  document.getElementById('menuAddUser').addEventListener('click', openUserModal);
-  document.getElementById('canvasAddUserBtn').addEventListener('click', openUserModal);
-  document.getElementById('menuAddSub').addEventListener('click', openSubModal);
-  document.getElementById('canvasAddSubBtn').addEventListener('click', openSubModal);
-  document.getElementById('menuTestClass').addEventListener('click', () => navigateTo('/klassen'));
+  document.getElementById('menuAddUser')?.addEventListener('click', openUserModal);
+  document.getElementById('canvasAddUserBtn')?.addEventListener('click', openUserModal);
+  document.getElementById('menuAddSub')?.addEventListener('click', openSubModal);
+  document.getElementById('canvasAddSubBtn')?.addEventListener('click', openSubModal);
+  document.getElementById('menuAddClass')?.addEventListener('click', () => openClassModal());
+  document.getElementById('canvasAddClassBtn')?.addEventListener('click', () => openClassModal());
+  document.getElementById('menuTestClass')?.addEventListener('click', () => navigateTo('/klassen'));
+
+  // Timetable Class Selector Change
+  const timetableClassSelect = document.getElementById('timetableClassSelect');
+  if (timetableClassSelect) {
+    timetableClassSelect.addEventListener('change', (e) => {
+      selectedTimetableClass = e.target.value;
+      loadTimetableForClass(selectedTimetableClass);
+    });
+  }
+
+  // Clear Timetable Button
+  const clearTimetableBtn = document.getElementById('clearTimetableBtn');
+  if (clearTimetableBtn) {
+    clearTimetableBtn.addEventListener('click', () => {
+      if (!selectedTimetableClass) return;
+      openConfirmDeleteDialog(
+        `Stundenplan für ${selectedTimetableClass} leeren?`,
+        `Möchtest du wirklich alle Stunden im Stundenplan der Klasse ${selectedTimetableClass} löschen?`,
+        async () => {
+          currentTimetable = {};
+          await authFetch(`/api/admin/timetables/${encodeURIComponent(selectedTimetableClass)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+          });
+          showToast(`Stundenplan für ${selectedTimetableClass} geleert.`);
+          renderTimetableGrid();
+        }
+      );
+    });
+  }
+
+  // Student Portal Tabs Switcher
+  const tabStudentSubs = document.getElementById('tabStudentSubs');
+  const tabStudentTimetable = document.getElementById('tabStudentTimetable');
+  const studentSubsView = document.getElementById('studentSubsView');
+  const studentTimetableView = document.getElementById('studentTimetableView');
+
+  if (tabStudentSubs && tabStudentTimetable && studentSubsView && studentTimetableView) {
+    tabStudentSubs.addEventListener('click', () => {
+      tabStudentSubs.setAttribute('selected', '');
+      tabStudentTimetable.removeAttribute('selected');
+      studentSubsView.style.display = 'block';
+      studentTimetableView.style.display = 'none';
+    });
+
+    tabStudentTimetable.addEventListener('click', () => {
+      tabStudentTimetable.setAttribute('selected', '');
+      tabStudentSubs.removeAttribute('selected');
+      studentSubsView.style.display = 'none';
+      studentTimetableView.style.display = 'block';
+    });
+  }
 
   // Role Filter Chips
   const roleChips = [
@@ -416,56 +813,67 @@ function initApp() {
   roleChips.forEach(chip => {
     if (!chip) return;
     chip.addEventListener('click', () => {
-      roleChips.forEach(c => c.removeAttribute('selected'));
+      roleChips.forEach(c => c?.removeAttribute('selected'));
       chip.setAttribute('selected', '');
       currentRoleFilter = chip.getAttribute('data-role');
       renderUsers();
     });
   });
 
-  // Search Inputs
-  const searchInput = document.getElementById('globalSearchInput');
-  if (searchInput) searchInput.addEventListener('input', () => renderUsers());
+  // Global Search
+  document.getElementById('globalSearchInput')?.addEventListener('input', () => {
+    renderUsers();
+  });
 
-  const subSearchInput = document.getElementById('subClassFilter');
-  if (subSearchInput) subSearchInput.addEventListener('input', () => renderSubs());
+  // User Class Filter Dropdown
+  document.getElementById('userClassFilterDropdown')?.addEventListener('change', (e) => {
+    currentClassFilter = e.target.value;
+    renderUsers();
+  });
 
-  const classDropdown = document.getElementById('userClassFilterDropdown');
-  if (classDropdown) {
-    classDropdown.addEventListener('change', (e) => {
-      currentClassFilter = e.target.value;
-      renderUsers();
+  // Sub Class Filter Chips
+  document.querySelectorAll('#subClassChips md-filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('#subClassChips md-filter-chip').forEach(c => c.removeAttribute('selected'));
+      chip.setAttribute('selected', '');
+      currentSubClassFilter = chip.getAttribute('data-class-filter') || 'all';
+      renderSubs();
     });
-  }
+  });
 
   // Clear Subs Button
-  const btnClearSubs = document.getElementById('btnClearSubs');
-  if (btnClearSubs) {
-    btnClearSubs.addEventListener('click', () => {
-      openConfirmDeleteDialog(
-        'Alle Vertretungen löschen?',
-        'Möchtest du wirklich die gesamte Vertretungsliste für alle Klassen leeren?',
-        async () => {
-          await authFetch('/api/admin/substitutions/clear', { method: 'POST' });
-          showToast('Vertretungsliste vollständig geleert.');
-          loadSubs();
-        }
-      );
+  document.getElementById('btnClearSubs')?.addEventListener('click', () => {
+    openConfirmDeleteDialog(
+      'Alle Vertretungspläne löschen?',
+      'Möchtest du wirklich alle Vertretungseinträge unwiderruflich löschen?',
+      async () => {
+        await authFetch('/api/admin/substitutions/clear', { method: 'POST' });
+        showToast('Alle Vertretungspläne gelöscht.');
+        loadSubs();
+      }
+    );
+  });
+
+  // Live Class Code Tester
+  const liveTestInput = document.getElementById('liveTestClassInput');
+  const liveTestResult = document.getElementById('liveTestClassResult');
+  if (liveTestInput && liveTestResult) {
+    liveTestInput.addEventListener('input', () => {
+      const val = liveTestInput.value.trim();
+      if (!val) {
+        liveTestResult.innerHTML = '';
+        return;
+      }
+      const norm = normalizeClassCode(val);
+      if (isValidClassCode(norm)) {
+        liveTestResult.innerHTML = `<span class="class-chip" style="background:var(--md-sys-color-primary-container); color:var(--md-sys-color-on-primary-container);">✓ Gültig: ${norm}</span>`;
+      } else {
+        liveTestResult.innerHTML = `<span style="color:var(--md-sys-color-error);">✗ Ungültig (z. B. 9aR, 8bH)</span>`;
+      }
     });
   }
 
-  // Class Tester Button
-  const btnTestClass = document.getElementById('btnTestClass');
-  if (btnTestClass) btnTestClass.addEventListener('click', testClass);
-
-  const testInput = document.getElementById('testClassInput');
-  if (testInput) {
-    testInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') testClass();
-    });
-  }
-
-  // Login Form Submission
+  // --- UNIFIED LOGIN HANDLER ---
   const loginForm = document.getElementById('loginForm');
   const loginSubmitBtn = document.getElementById('loginSubmitBtn');
 
@@ -497,15 +905,14 @@ function initApp() {
         return;
       }
 
-      if (data.user.role !== 'admin') {
-        errText.textContent = 'Nur Administratoren haben Zugriff auf dieses Web-Portal.';
-        errEl.style.display = 'flex';
-        return;
-      }
-
       setAuthToken(data.token);
       setStoredAdminUser(data.user);
-      showAppScreen(data.user);
+
+      if (data.user.role === 'schueler') {
+        showStudentScreen(data.user);
+      } else {
+        showAppScreen(data.user);
+      }
     } catch (err) {
       errText.textContent = 'Verbindung zum Server fehlgeschlagen.';
       errEl.style.display = 'flex';
@@ -525,8 +932,12 @@ function initApp() {
   const token = getAuthToken();
   const user = getStoredAdminUser();
 
-  if (token) {
-    showAppScreen(user);
+  if (token && user) {
+    if (user.role === 'schueler') {
+      showStudentScreen(user);
+    } else {
+      showAppScreen(user);
+    }
   } else {
     showLoginScreen();
   }
