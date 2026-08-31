@@ -584,25 +584,46 @@
       display: flex;
       flex-direction: column;
 
-      /* Dropdown / Menu Style Roll-Down (Aufrollen) without any deformation */
+      /* Google Material Web Official Animation: 35% height to 100%, -50px to 0 slide, Emphasized easing */
       transform-origin: top center;
       opacity: 0;
-      clip-path: inset(0 0 100% 0 round 28px);
-      transform: translateY(-16px);
-      transition: clip-path 0.25s cubic-bezier(0.3, 0, 0.8, 0.15),
-                  transform 0.25s cubic-bezier(0.3, 0, 0.8, 0.15),
-                  opacity 0.18s linear;
-      will-change: clip-path, transform, opacity;
+      clip-path: inset(0 0 65% 0 round 28px);
+      transform: translateY(-50px);
+      transition: transform 0.15s cubic-bezier(0.3, 0, 0.8, 0.15),
+                  clip-path 0.15s cubic-bezier(0.3, 0, 0.8, 0.15),
+                  opacity 0.15s linear;
+      will-change: transform, clip-path, opacity;
     }
 
-    /* Unroll / Roll-Down open state (100% uncompressed text and fields) */
+    /* Google M3 Open Animation */
     .m3-modal-overlay.open .m3-dialog-card {
       opacity: 1;
-      clip-path: inset(0 0 0% 0 round 28px);
       transform: translateY(0);
-      transition: clip-path 0.38s cubic-bezier(0.05, 0.7, 0.1, 1),
-                  transform 0.38s cubic-bezier(0.05, 0.7, 0.1, 1),
-                  opacity 0.25s cubic-bezier(0.2, 0, 0, 1);
+      clip-path: inset(0 0 0% 0 round 28px);
+      transition: transform 0.5s cubic-bezier(0.3, 0, 0, 1),
+                  clip-path 0.5s cubic-bezier(0.3, 0, 0, 1),
+                  opacity 0.15s linear;
+    }
+
+    /* Staggered content fade-in matching M3 story spec */
+    .m3-dialog-header, .dialog-form, .m3-dialog-actions {
+      opacity: 0;
+      transition: opacity 0.25s linear;
+    }
+
+    .m3-modal-overlay.open .m3-dialog-header {
+      opacity: 1;
+      transition-delay: 0.05s;
+    }
+
+    .m3-modal-overlay.open .dialog-form {
+      opacity: 1;
+      transition-delay: 0.1s;
+    }
+
+    .m3-modal-overlay.open .m3-dialog-actions {
+      opacity: 1;
+      transition-delay: 0.18s;
     }
 
     .m3-dialog-header {
