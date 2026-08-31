@@ -85,8 +85,8 @@
       user-select: text;
     }
 
-    /* Never show closed menus in page flow */
-    md-menu:not([open]) {
+    /* Hide menus only before custom element hydration */
+    md-menu:not(:defined) {
       display: none !important;
     }
 
@@ -580,7 +580,7 @@
       max-height: 90vh;
       overflow-y: auto;
       box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
-      border: 1px solid var(--md-sys-color-outline-variant);
+      border: none;
       display: flex;
       flex-direction: column;
 
