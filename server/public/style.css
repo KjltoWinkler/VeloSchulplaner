@@ -1,0 +1,665 @@
+:root {
+  /* M3 Tokens matching Google Workspace / Drive */
+  --md-sys-color-primary: #a8c7fa;
+  --md-sys-color-on-primary: #042e60;
+  --md-sys-color-primary-container: #004a77;
+  --md-sys-color-on-primary-container: #c2e7ff;
+  --md-sys-color-secondary: #c2e7ff;
+  --md-sys-color-secondary-container: #004d66;
+  --md-sys-color-on-secondary-container: #c2e8ff;
+  --md-sys-color-surface: #131314;
+  --md-sys-color-surface-container: #28292a;
+  --md-sys-color-surface-container-high: #272a2e;
+  --md-sys-color-surface-container-highest: #3d3f41;
+  --md-sys-color-on-surface: #e3e3e3;
+  --md-sys-color-on-surface-variant: #c4c7c5;
+  --md-sys-color-outline: #8e918f;
+  --md-sys-color-outline-variant: #444746;
+  --md-sys-color-error: #f2b8b5;
+  --md-sys-color-error-container: #8c1d18;
+  --md-sys-color-on-error-container: #f9dedc;
+  --md-ref-typeface-brand: 'Google Sans', 'Roboto', sans-serif;
+  --md-ref-typeface-plain: 'Google Sans Text', 'Roboto', sans-serif;
+
+  --drive-bg: #1b1b1b;
+  --drive-canvas-bg: #131314;
+  --drive-border-subtle: #2d2f31;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --md-sys-color-primary: #0b57d0;
+    --md-sys-color-on-primary: #ffffff;
+    --md-sys-color-primary-container: #d3e3fd;
+    --md-sys-color-on-primary-container: #041e49;
+    --md-sys-color-secondary: #00639b;
+    --md-sys-color-secondary-container: #c2e7ff;
+    --md-sys-color-on-secondary-container: #001e2f;
+    --md-sys-color-surface: #ffffff;
+    --md-sys-color-surface-container: #f0f4f9;
+    --md-sys-color-surface-container-high: #e9eef6;
+    --md-sys-color-surface-container-highest: #dde3ea;
+    --md-sys-color-on-surface: #1f1f1f;
+    --md-sys-color-on-surface-variant: #444746;
+    --md-sys-color-outline: #747775;
+    --md-sys-color-outline-variant: #c4c7c5;
+    --md-sys-color-error: #b3261e;
+    --md-sys-color-error-container: #f9dedc;
+    --md-sys-color-on-error-container: #410e0b;
+
+    --drive-bg: #f8fafd;
+    --drive-canvas-bg: #ffffff;
+    --drive-border-subtle: #e1e3e1;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--md-ref-typeface-plain);
+  background-color: var(--drive-bg);
+  color: var(--md-sys-color-on-surface);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: text;
+}
+
+/* Hide menus only before custom element hydration */
+md-menu:not(:defined) {
+  display: none !important;
+}
+
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined' !important;
+  font-weight: normal;
+  font-style: normal;
+  font-size: 22px;
+  line-height: 1;
+  display: inline-block;
+  text-transform: none;
+  letter-spacing: normal;
+  word-wrap: normal;
+  white-space: nowrap;
+  direction: ltr;
+  vertical-align: middle;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* LOGIN OVERLAY */
+.login-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--drive-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 16px;
+}
+
+.login-card {
+  background: var(--md-sys-color-surface-container);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 28px;
+  padding: 40px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.login-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+}
+
+.login-logo {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+.login-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.login-title {
+  font-family: var(--md-ref-typeface-brand);
+  font-size: 1.6rem;
+  font-weight: 500;
+}
+
+.login-subtitle {
+  font-size: 0.9rem;
+  color: var(--md-sys-color-on-surface-variant);
+  line-height: 1.4;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.login-error {
+  background: var(--md-sys-color-error-container);
+  color: var(--md-sys-color-on-error-container);
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  display: none;
+  align-items: center;
+  gap: 8px;
+}
+
+/* TOP HEADER: GOOGLE DRIVE STYLE */
+.drive-header {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: var(--drive-bg);
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 240px;
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+}
+
+.drive-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.drive-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.app-title {
+  font-family: var(--md-ref-typeface-brand);
+  font-size: 1.35rem;
+  font-weight: 500;
+  letter-spacing: -0.2px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-title span.badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* CENTER SEARCH BAR (DRIVE STYLE) */
+.header-center {
+  flex: 1;
+  max-width: 720px;
+}
+
+.drive-search-bar-wrap {
+  width: 100%;
+}
+
+.drive-search-bar-wrap md-outlined-text-field {
+  width: 100%;
+  --md-outlined-text-field-container-shape: 28px;
+  --md-outlined-text-field-top-space: 8px;
+  --md-outlined-text-field-bottom-space: 8px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-info-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--md-sys-color-surface-container);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.avatar-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+  font-weight: 700;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* APP BODY LAYOUT */
+.app-body {
+  display: flex;
+  flex: 1;
+  height: calc(100vh - 64px);
+  overflow: hidden;
+}
+
+/* LEFT SIDEBAR (GOOGLE DRIVE STYLE) */
+.drive-sidebar {
+  width: 256px;
+  flex-shrink: 0;
+  padding: 8px 12px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.new-btn-container {
+  position: relative;
+}
+
+.drive-fab-btn {
+  --md-fab-container-shape: 16px;
+  --md-fab-container-height: 56px;
+  --md-fab-container-padding-horizontal: 20px;
+}
+
+/* NAVIGATION ITEMS */
+.nav-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nav-item {
+  height: 44px;
+  border-radius: 22px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 16px;
+  font-size: 0.92rem;
+  font-weight: 500;
+  cursor: pointer;
+  color: var(--md-sys-color-on-surface-variant);
+  transition: background 0.15s, color 0.15s;
+}
+
+.nav-item:hover {
+  background: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface);
+}
+
+.nav-item.active {
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+  font-weight: 600;
+}
+
+.nav-item.active .material-symbols-outlined {
+  font-variation-settings: 'FILL' 1;
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  padding: 12px 16px;
+  background: var(--md-sys-color-surface-container);
+  border-radius: 12px;
+  font-size: 0.8rem;
+  color: var(--md-sys-color-on-surface-variant);
+  line-height: 1.4;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #81c995;
+  font-weight: 600;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #81c995;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.4; }
+  50% { opacity: 1; }
+  100% { opacity: 0.4; }
+}
+
+/* MAIN CANVAS (GOOGLE DRIVE STYLE) */
+.drive-main-canvas {
+  flex: 1;
+  background: var(--drive-canvas-bg);
+  margin: 0 16px 16px 0;
+  border-radius: 16px;
+  border: none;
+  overflow-y: auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.view-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* TOP BAR INSIDE CANVAS */
+.canvas-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.canvas-title {
+  font-family: var(--md-ref-typeface-brand);
+  font-size: 1.5rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* FILTER CHIPS ROW (M3 DRIVE STYLE) */
+.drive-chips-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+/* TABLE: GOOGLE DRIVE STYLE */
+.drive-table-container {
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: 12px;
+  overflow: visible;
+  background: var(--drive-canvas-bg);
+}
+
+table.drive-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+table.drive-table th {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+  color: var(--md-sys-color-on-surface-variant);
+  font-weight: 500;
+  font-size: 0.85rem;
+  background: var(--md-sys-color-surface-container);
+}
+
+table.drive-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+  color: var(--md-sys-color-on-surface);
+  vertical-align: middle;
+}
+
+table.drive-table tr:last-child td {
+  border-bottom: none;
+}
+
+table.drive-table tr:hover td {
+  background: var(--md-sys-color-surface-container-high);
+}
+
+/* ROLE BADGES & CHIPS */
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 16px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.role-schueler {
+  background: rgba(168, 199, 250, 0.2);
+  color: var(--md-sys-color-primary);
+  border: 1px solid rgba(168, 199, 250, 0.4);
+}
+
+.role-lehrer {
+  background: rgba(129, 201, 149, 0.2);
+  color: #81c995;
+  border: 1px solid rgba(129, 201, 149, 0.4);
+}
+
+.role-admin {
+  background: rgba(253, 214, 99, 0.2);
+  color: #fdd663;
+  border: 1px solid rgba(253, 214, 99, 0.4);
+}
+
+.class-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.82rem;
+  background: var(--md-sys-color-surface-container-high);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  color: var(--md-sys-color-on-surface);
+}
+
+.row-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+/* INFO CARD FOR KLASSENSYSTEM */
+.info-card {
+  background: var(--md-sys-color-surface-container);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 20px;
+  border-left: 4px solid var(--md-sys-color-primary);
+}
+
+/* MATERIAL 3 DIALOG (Bulletproof & Beautiful) */
+.m3-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+  transition: opacity 0.2s linear, visibility 0.2s linear;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.m3-modal-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+  visibility: visible;
+  transition: opacity 0.25s linear, visibility 0.25s linear;
+}
+
+.m3-dialog-card {
+  background: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface);
+  border-radius: 28px;
+  padding: 28px;
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+  border: none;
+  display: flex;
+  flex-direction: column;
+
+  /* Google Material Web Official Animation: 35% height to 100%, -50px to 0 slide, Emphasized easing */
+  transform-origin: top center;
+  opacity: 0;
+  clip-path: inset(0 0 65% 0 round 28px);
+  transform: translateY(-50px);
+  transition: transform 0.15s cubic-bezier(0.3, 0, 0.8, 0.15),
+              clip-path 0.15s cubic-bezier(0.3, 0, 0.8, 0.15),
+              opacity 0.15s linear;
+  will-change: transform, clip-path, opacity;
+}
+
+/* Google M3 Open Animation */
+.m3-modal-overlay.open .m3-dialog-card {
+  opacity: 1;
+  transform: translateY(0);
+  clip-path: inset(0 0 0% 0 round 28px);
+  transition: transform 0.5s cubic-bezier(0.3, 0, 0, 1),
+              clip-path 0.5s cubic-bezier(0.3, 0, 0, 1),
+              opacity 0.15s linear;
+}
+
+/* Staggered content fade-in matching M3 story spec */
+.m3-dialog-header, .dialog-form, .m3-dialog-actions {
+  opacity: 0;
+  transition: opacity 0.25s linear;
+}
+
+.m3-modal-overlay.open .m3-dialog-header {
+  opacity: 1;
+  transition-delay: 0.05s;
+}
+
+.m3-modal-overlay.open .dialog-form {
+  opacity: 1;
+  transition-delay: 0.1s;
+}
+
+.m3-modal-overlay.open .m3-dialog-actions {
+  opacity: 1;
+  transition-delay: 0.18s;
+}
+
+.m3-dialog-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.m3-dialog-icon {
+  font-size: 32px !important;
+}
+
+.m3-dialog-title {
+  font-family: var(--md-ref-typeface-brand);
+  font-size: 1.4rem;
+  font-weight: 500;
+  margin: 0;
+  color: var(--md-sys-color-on-surface);
+}
+
+.m3-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--drive-border-subtle);
+}
+
+.dialog-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 4px 0;
+  width: 100%;
+}
+
+/* TOAST */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--md-sys-color-inverse-surface, #313033);
+  color: var(--md-sys-color-inverse-on-surface, #f4eff4);
+  padding: 12px 24px;
+  border-radius: 24px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  display: none;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  z-index: 20000;
+}

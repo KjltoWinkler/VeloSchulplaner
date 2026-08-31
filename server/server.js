@@ -585,6 +585,14 @@ app.post("/api/admin/substitutions/clear", requireAdmin, (req, res) => {
   res.json({ success: true, message: "Alle Vertretungen gelöscht." });
 });
 
+// SPA Fallback for client-side routing (e.g. /benutzer, /vertretungsplaene, /klassen, /login)
+app.get("*", (req, res, next) => {
+  if (req.path.startsWith("/api")) {
+    return next();
+  }
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
 // Start server
 app.listen(PORT, () => {
   console.log(`====================================================`);
