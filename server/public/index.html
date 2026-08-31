@@ -564,8 +564,16 @@
         </md-outlined-text-field>
         <div id="classModalNotice" style="font-size:0.8rem; margin-top:-8px; min-height:18px;"></div>
 
-        <md-outlined-text-field id="inputClassTeacher" label="Klassenlehrer (Name / Kürzel)">
-        </md-outlined-text-field>
+        <div style="position:relative; width:100%;">
+          <md-outlined-text-field id="inputClassTeacher" label="Klassenlehrer (Name / Kürzel)" supporting-text="Aus Dropdown wählen oder frei eingeben" style="width:100%;">
+            <span slot="leading-icon" class="material-symbols-outlined">person</span>
+            <md-icon-button slot="trailing-icon" id="btnToggleClassTeacherMenu" type="button" title="Lehrer auswählen">
+              <span class="material-symbols-outlined">arrow_drop_down</span>
+            </md-icon-button>
+          </md-outlined-text-field>
+          <md-menu id="classTeacherMenu" anchor="inputClassTeacher" default-focus="none" positioning="popover" style="min-width:320px; max-height:280px;">
+          </md-menu>
+        </div>
 
         <md-outlined-text-field id="inputClassRoom" label="Stammraum (z. B. R102)">
         </md-outlined-text-field>

@@ -26,10 +26,12 @@ export let lessonDialog;
 let onConfirmDeleteCallback = null;
 let onClassSavedCallback = null;
 let onLessonSavedCallback = null;
+let getUsersListCallback = null;
+let getClassesListCallback = null;
 let currentEditingClass = null;
 let currentEditingLesson = null;
 
-export function initModals({ onUserSaved, onSubSaved, onClassSaved, onLessonSaved, getUsersList }) {
+export function initModals({ onUserSaved, onSubSaved, onClassSaved, onLessonSaved, getUsersList, getClassesList }) {
   userDialog = createM3Modal('addUserModal');
   editUserDialog = createM3Modal('editUserModal');
   subDialog = createM3Modal('addSubModal');
@@ -38,6 +40,8 @@ export function initModals({ onUserSaved, onSubSaved, onClassSaved, onLessonSave
   lessonDialog = createM3Modal('lessonModal');
   onClassSavedCallback = onClassSaved;
   onLessonSavedCallback = onLessonSaved;
+  getUsersListCallback = getUsersList;
+  getClassesListCallback = getClassesList;
 
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
@@ -367,6 +371,41 @@ export function initModals({ onUserSaved, onSubSaved, onClassSaved, onLessonSave
     });
   }
 
+  // --- CLASS TEACHER COMBOBOX DROPDOWN HANDLERS ---
+  const teacherInput = document.getElementById('inputClassTeacher');
+  const teacherToggleBtn = document.getElementById('btnToggleClassTeacherMenu');
+  const teacherMenu = document.getElementById('classTeacherMenu');
+
+  if (teacherToggleBtn && teacherMenu) {
+    teacherToggleBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      populateTeacherMenu(teacherInput ? teacherInput.value : '');
+      teacherMenu.open = !teacherMenu.open;
+    });
+  }
+
+  if (teacherInput && teacherMenu) {
+    teacherInput.addEventListener('input', () => {
+      populateTeacherMenu(teacherInput.value);
+      if (!teacherMenu.open) {
+        teacherMenu.open = true;
+      }
+    });
+
+    teacherInput.addEventListener('focus', () => {
+      populateTeacherMenu(teacherInput.value);
+      teacherMenu.open = true;
+    });
+  }
+
+  const closeClassBtn = document.getElementById('closeClassModal');
+  if (closeClassBtn) {
+    closeClassBtn.addEventListener('click', () => {
+      if (teacherMenu) teacherMenu.open = false;
+      classDialog.close();
+    });
+  }
+
   // --- LESSON MODAL HANDLERS ---
   const closeLessonBtn = document.getElementById('closeLessonModal');
   if (closeLessonBtn) closeLessonBtn.addEventListener('click', () => lessonDialog.close());
@@ -446,6 +485,79 @@ export function openSubModal() {
   subDialog.show();
 }
 
+export function populateTeacherMenu(filterText = '') {
+  const teacherMenu = document.getElementById('classTeacherMenu');
+  if (!teacherMenu) return;
+
+  const teacherMap = new Map();
+
+  // 1. Teachers from usersList (users with role === 'lehrer')
+  const allUsers = (getUsersListCallback ? getUsersListCallback() : []) || [];
+  allUsers.filter(u => u.role === 'lehrer').forEach(u => {
+    const displayName = u.name || u.username;
+    if (displayName) {
+      teacherMap.set(displayName, { name: displayName, username: u.username });
+    }
+  });
+
+  // 2. Teachers from existing classes
+  const allClasses = (getClassesListCallback ? getClassesListCallback() : []) || [];
+  allClasses.forEach(c => {
+    if (c.teacher && !teacherMap.has(c.teacher)) {
+      teacherMap.set(c.teacher, { name: c.teacher, username: '' });
+    }
+  });
+
+  // 3. Fallback defaults if no teachers yet in the system
+  if (teacherMap.size === 0) {
+    const defaultSuggestions = [
+      { name: 'Hr. Müller (MÜL)', username: 'lehrer_mueller' },
+      { name: 'Fr. Schmidt (SCH)', username: '' },
+      { name: 'Hr. Klein (KLE)', username: '' },
+      { name: 'Fr. Weber (WEB)', username: '' },
+      { name: 'Hr. Becker (BEC)', username: '' }
+    ];
+    defaultSuggestions.forEach(t => teacherMap.set(t.name, t));
+  }
+
+  const cleanFilter = (filterText || '').toLowerCase().trim();
+  const teachers = Array.from(teacherMap.values()).filter(t => {
+    if (!cleanFilter) return true;
+    return (t.name || '').toLowerCase().includes(cleanFilter) || (t.username || '').toLowerCase().includes(cleanFilter);
+  });
+
+  teacherMenu.innerHTML = '';
+
+  if (teachers.length === 0) {
+    const emptyItem = document.createElement('md-menu-item');
+    emptyItem.disabled = true;
+    emptyItem.innerHTML = `
+      <span slot="headline">Kein passender Lehrer</span>
+      <span slot="supporting-text">Name frei eingeben</span>
+    `;
+    teacherMenu.appendChild(emptyItem);
+    return;
+  }
+
+  teachers.forEach(t => {
+    const item = document.createElement('md-menu-item');
+    item.setAttribute('data-value', t.name);
+    item.innerHTML = `
+      <span slot="headline">${t.name}</span>
+      ${t.username ? `<span slot="supporting-text">@${t.username}</span>` : ''}
+    `;
+    item.addEventListener('click', () => {
+      const teacherEl = document.getElementById('inputClassTeacher');
+      if (teacherEl) {
+        teacherEl.value = t.name;
+        teacherEl.focus();
+      }
+      teacherMenu.close();
+    });
+    teacherMenu.appendChild(item);
+  });
+}
+
 export function openClassModal(classItem = null) {
   currentEditingClass = classItem;
   const titleEl = document.getElementById('classModalTitle');
@@ -455,9 +567,11 @@ export function openClassModal(classItem = null) {
   const branchEl = document.getElementById('inputClassBranch');
   const noticeEl = document.getElementById('classModalNotice');
   const errEl = document.getElementById('classModalError');
+  const teacherMenu = document.getElementById('classTeacherMenu');
 
   if (errEl) errEl.style.display = 'none';
   if (noticeEl) noticeEl.textContent = '';
+  if (teacherMenu) teacherMenu.open = false;
 
   if (classItem) {
     if (titleEl) titleEl.textContent = `Klasse ${classItem.code} bearbeiten`;
@@ -478,6 +592,8 @@ export function openClassModal(classItem = null) {
     if (roomEl) roomEl.value = '';
     if (branchEl) branchEl.value = 'Realschule';
   }
+
+  populateTeacherMenu(teacherEl ? teacherEl.value : '');
   classDialog.show();
 }
 

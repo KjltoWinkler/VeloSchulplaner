@@ -700,7 +700,8 @@ export function initApp() {
     onSubSaved: () => loadSubs(),
     onClassSaved: () => loadClasses(),
     onLessonSaved: () => renderTimetableGrid(),
-    getUsersList: () => usersList
+    getUsersList: () => usersList,
+    getClassesList: () => classesList
   });
 
   // "+ Neu" Button Menu
