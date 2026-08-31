@@ -13,21 +13,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Google+Sans+Text:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
 
-  <!-- Global Error Logger & Cache-Busting Material Web Bundle -->
-  <script>
-    window.addEventListener('error', function(e) {
-      console.error('Captured Error:', e);
-      var b = document.getElementById('debugBanner');
-      if (!b) {
-        b = document.createElement('div');
-        b.id = 'debugBanner';
-        b.style = 'position:fixed;top:0;left:0;right:0;background:#b3261e;color:#fff;padding:12px 16px;z-index:999999;font-family:monospace;font-size:13px;white-space:pre-wrap;box-shadow:0 4px 12px rgba(0,0,0,0.5);';
-        document.documentElement.appendChild(b);
-      }
-      b.textContent += 'Fehler: ' + (e.message || e) + ' (' + (e.filename || '') + ':' + (e.lineno || '') + ')\n';
-    });
-  </script>
-  <script src="/material-web.bundle.js?v=20260831_1"></script>
+  <!-- Material Web Components (Self-hosted Synchronous IIFE Bundle) -->
+  <script src="/material-web.bundle.js?v=20260831_2"></script>
 
   <style>
     :root {
@@ -98,8 +85,7 @@
       user-select: text;
     }
 
-    /* Never show closed dialogs or menus in page flow */
-    md-dialog:not([open]),
+    /* Never show closed menus in page flow */
     md-menu:not([open]) {
       display: none !important;
     }
@@ -558,12 +544,87 @@
       border-left: 4px solid var(--md-sys-color-primary);
     }
 
+    /* MATERIAL 3 DIALOG (Bulletproof & Beautiful) */
+    .m3-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s cubic-bezier(0.05, 0.7, 0.1, 1);
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    .m3-modal-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .m3-dialog-card {
+      background: var(--md-sys-color-surface-container-high);
+      color: var(--md-sys-color-on-surface);
+      border-radius: 28px;
+      padding: 28px;
+      width: 100%;
+      max-width: 520px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+      border: 1px solid var(--md-sys-color-outline-variant);
+      transform: scale(0.92);
+      transition: transform 0.2s cubic-bezier(0.05, 0.7, 0.1, 1);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .m3-modal-overlay.open .m3-dialog-card {
+      transform: scale(1);
+    }
+
+    .m3-dialog-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .m3-dialog-icon {
+      font-size: 32px !important;
+    }
+
+    .m3-dialog-title {
+      font-family: var(--md-ref-typeface-brand);
+      font-size: 1.4rem;
+      font-weight: 500;
+      margin: 0;
+      color: var(--md-sys-color-on-surface);
+    }
+
+    .m3-dialog-actions {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 12px;
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 1px solid var(--drive-border-subtle);
+    }
+
     .dialog-form {
       display: flex;
       flex-direction: column;
       gap: 16px;
-      padding: 8px 0;
-      min-width: 380px;
+      padding: 4px 0;
+      width: 100%;
     }
 
     /* TOAST */
@@ -861,106 +922,110 @@
     </div>
   </div>
 
-  <!-- MD-DIALOG: ADD USER (Material Web Dialog) -->
-  <md-dialog id="addUserDialog">
-    <md-icon slot="icon">
-      <span class="material-symbols-outlined" style="color:var(--md-sys-color-primary);">person_add</span>
-    </md-icon>
-    <div slot="headline">Neuen Benutzer anlegen</div>
-    <form slot="content" id="addUserForm" method="dialog" class="dialog-form">
-      <md-outlined-text-field id="inputUsername" label="Benutzername *" required supporting-text="Einmaliger Login-Name (bleibt unverändert)">
-      </md-outlined-text-field>
-      
-      <div style="display:flex; gap:8px; align-items:flex-start;">
-        <md-outlined-text-field id="inputPassword" label="Festes Passwort *" required style="flex:1;">
-        </md-outlined-text-field>
-        <md-outlined-button type="button" id="btnGenPassword" style="margin-top:4px;" title="Zufälliges Passwort generieren">
-          <span class="material-symbols-outlined">casino</span>
-        </md-outlined-button>
+  <!-- M3 MODAL: ADD USER -->
+  <div id="addUserModal" class="m3-modal-overlay">
+    <div class="m3-dialog-card">
+      <div class="m3-dialog-header">
+        <span class="material-symbols-outlined m3-dialog-icon" style="color:var(--md-sys-color-primary);">person_add</span>
+        <h2 class="m3-dialog-title">Neuen Benutzer anlegen</h2>
       </div>
-
-      <md-outlined-text-field id="inputName" label="Vollständiger Name (optional)">
-      </md-outlined-text-field>
-      
-      <md-outlined-select id="inputRole" label="Rolle *" required>
-        <md-select-option value="schueler" selected><div slot="headline">Schüler (Klassengebunden)</div></md-select-option>
-        <md-select-option value="lehrer"><div slot="headline">Lehrer</div></md-select-option>
-        <md-select-option value="admin"><div slot="headline">Administrator (Web-Zugang)</div></md-select-option>
-      </md-outlined-select>
-
-      <div id="classInputGroup">
-        <md-outlined-text-field id="inputClass" label="Klasse (z. B. 9aR, 8bH) *" supporting-text="Format: [Stufe][a-z][H/R]">
+      <form id="addUserForm" class="dialog-form" onsubmit="return false;">
+        <md-outlined-text-field id="inputUsername" label="Benutzername *" required supporting-text="Einmaliger Login-Name (bleibt unverändert)">
         </md-outlined-text-field>
-        <div id="classValidationNotice" style="font-size:0.8rem; margin-top:4px; min-height:18px;"></div>
+        
+        <div style="display:flex; gap:12px; align-items:flex-start;">
+          <md-outlined-text-field id="inputPassword" label="Festes Passwort *" required style="flex:1;">
+          </md-outlined-text-field>
+          <md-filled-tonal-button type="button" id="btnGenPassword" style="margin-top:2px; height:54px;" title="Zufälliges Passwort generieren">
+            <span slot="icon" class="material-symbols-outlined">casino</span>
+          </md-filled-tonal-button>
+        </div>
+
+        <md-outlined-text-field id="inputName" label="Vollständiger Name (optional)">
+        </md-outlined-text-field>
+        
+        <md-outlined-select id="inputRole" label="Rolle *" required>
+          <md-select-option value="schueler" selected><div slot="headline">Schüler (Klassengebunden)</div></md-select-option>
+          <md-select-option value="lehrer"><div slot="headline">Lehrer</div></md-select-option>
+          <md-select-option value="admin"><div slot="headline">Administrator (Web-Zugang)</div></md-select-option>
+        </md-outlined-select>
+
+        <div id="classInputGroup">
+          <md-outlined-text-field id="inputClass" label="Klasse (z. B. 9aR, 8bH) *" supporting-text="Format: [Stufe][a-z][H/R]">
+          </md-outlined-text-field>
+          <div id="classValidationNotice" style="font-size:0.8rem; margin-top:4px; min-height:18px;"></div>
+        </div>
+        <div id="userModalError" style="color:var(--md-sys-color-error); font-size:0.85rem; display:none;"></div>
+      </form>
+      <div class="m3-dialog-actions">
+        <md-text-button id="closeAddUserModal">Abbrechen</md-text-button>
+        <md-filled-tonal-button id="submitAddUserBtn">
+          Erstellen
+          <span slot="icon" class="material-symbols-outlined">check</span>
+        </md-filled-tonal-button>
       </div>
-      <div id="userModalError" style="color:var(--md-sys-color-error); font-size:0.85rem; display:none;"></div>
-    </form>
-    <div slot="actions">
-      <md-text-button form="addUserForm" value="cancel" id="closeAddUserModal">Abbrechen</md-text-button>
-      <md-filled-tonal-button id="submitAddUserBtn">
-        Erstellen
-        <span slot="icon" class="material-symbols-outlined">check</span>
-      </md-filled-tonal-button>
     </div>
-  </md-dialog>
+  </div>
 
-  <!-- MD-DIALOG: ADD SUBSTITUTION (Material Web Dialog) -->
-  <md-dialog id="addSubDialog">
-    <md-icon slot="icon">
-      <span class="material-symbols-outlined" style="color:#81c995;">event_note</span>
-    </md-icon>
-    <div slot="headline">Vertretungseintrag anlegen</div>
-    <form slot="content" id="addSubForm" method="dialog" class="dialog-form">
-      <md-outlined-text-field id="inputSubDay" label="Tag & Datum *" required>
-      </md-outlined-text-field>
-      <md-outlined-text-field id="inputSubClass" label="Klasse (z. B. 9aR) *" required>
-      </md-outlined-text-field>
-      <md-outlined-text-field id="inputSubLesson" label="Stunde (z. B. 1 - 2) *" required>
-      </md-outlined-text-field>
-      <md-outlined-text-field id="inputSubSubject" label="Fach *" required>
-      </md-outlined-text-field>
-      <md-outlined-select id="inputSubArt" label="Art">
-        <md-select-option value="Vertretung" selected><div slot="headline">Vertretung</div></md-select-option>
-        <md-select-option value="Entfall"><div slot="headline">Entfall</div></md-select-option>
-        <md-select-option value="Raumänderung"><div slot="headline">Raumänderung</div></md-select-option>
-        <md-select-option value="Betreuung"><div slot="headline">Betreuung</div></md-select-option>
-      </md-outlined-select>
-      <md-outlined-text-field id="inputSubRoom" label="Raum">
-      </md-outlined-text-field>
-      <md-outlined-text-field id="inputSubVertrVon" label="Vertreter (Kürzel)">
-      </md-outlined-text-field>
-      <md-outlined-text-field id="inputSubText" label="Bemerkung / Hinweis">
-      </md-outlined-text-field>
-      <div id="subModalError" style="color:var(--md-sys-color-error); font-size:0.85rem; display:none;"></div>
-    </form>
-    <div slot="actions">
-      <md-text-button form="addSubForm" value="cancel" id="closeAddSubModal">Abbrechen</md-text-button>
-      <md-filled-tonal-button id="submitAddSubBtn">
-        Speichern
-        <span slot="icon" class="material-symbols-outlined">save</span>
-      </md-filled-tonal-button>
+  <!-- M3 MODAL: ADD SUBSTITUTION -->
+  <div id="addSubModal" class="m3-modal-overlay">
+    <div class="m3-dialog-card">
+      <div class="m3-dialog-header">
+        <span class="material-symbols-outlined m3-dialog-icon" style="color:#81c995;">event_note</span>
+        <h2 class="m3-dialog-title">Vertretungseintrag anlegen</h2>
+      </div>
+      <form id="addSubForm" class="dialog-form" onsubmit="return false;">
+        <md-outlined-text-field id="inputSubDay" label="Tag & Datum *" required>
+        </md-outlined-text-field>
+        <md-outlined-text-field id="inputSubClass" label="Klasse (z. B. 9aR) *" required>
+        </md-outlined-text-field>
+        <md-outlined-text-field id="inputSubLesson" label="Stunde (z. B. 1 - 2) *" required>
+        </md-outlined-text-field>
+        <md-outlined-text-field id="inputSubSubject" label="Fach *" required>
+        </md-outlined-text-field>
+        <md-outlined-select id="inputSubArt" label="Art">
+          <md-select-option value="Vertretung" selected><div slot="headline">Vertretung</div></md-select-option>
+          <md-select-option value="Entfall"><div slot="headline">Entfall</div></md-select-option>
+          <md-select-option value="Raumänderung"><div slot="headline">Raumänderung</div></md-select-option>
+          <md-select-option value="Betreuung"><div slot="headline">Betreuung</div></md-select-option>
+        </md-outlined-select>
+        <md-outlined-text-field id="inputSubRoom" label="Raum">
+        </md-outlined-text-field>
+        <md-outlined-text-field id="inputSubVertrVon" label="Vertreter (Kürzel)">
+        </md-outlined-text-field>
+        <md-outlined-text-field id="inputSubText" label="Bemerkung / Hinweis">
+        </md-outlined-text-field>
+        <div id="subModalError" style="color:var(--md-sys-color-error); font-size:0.85rem; display:none;"></div>
+      </form>
+      <div class="m3-dialog-actions">
+        <md-text-button id="closeAddSubModal">Abbrechen</md-text-button>
+        <md-filled-tonal-button id="submitAddSubBtn">
+          Speichern
+          <span slot="icon" class="material-symbols-outlined">save</span>
+        </md-filled-tonal-button>
+      </div>
     </div>
-  </md-dialog>
+  </div>
 
-  <!-- MD-DIALOG: CONFIRM DELETE (Material Web Dialog) -->
-  <md-dialog id="confirmDeleteDialog">
-    <md-icon slot="icon">
-      <span class="material-symbols-outlined" style="color:var(--md-sys-color-error);">delete</span>
-    </md-icon>
-    <div slot="headline" id="confirmDeleteTitle">Eintrag löschen</div>
-    <form slot="content" id="confirmDeleteForm" method="dialog">
-      <p id="confirmDeleteMsg" style="color:var(--md-sys-color-on-surface); line-height:1.5; font-size:0.95rem;">
+  <!-- M3 MODAL: CONFIRM DELETE -->
+  <div id="confirmDeleteModal" class="m3-modal-overlay">
+    <div class="m3-dialog-card" style="max-width: 440px;">
+      <div class="m3-dialog-header">
+        <span class="material-symbols-outlined m3-dialog-icon" style="color:var(--md-sys-color-error);">delete</span>
+        <h2 class="m3-dialog-title" id="confirmDeleteTitle">Eintrag löschen</h2>
+      </div>
+      <p id="confirmDeleteMsg" style="color:var(--md-sys-color-on-surface); line-height:1.5; font-size:0.95rem; text-align:center; margin: 0 0 16px 0;">
         Möchtest du diesen Eintrag wirklich löschen?
       </p>
-    </form>
-    <div slot="actions">
-      <md-text-button id="confirmDeleteCancelBtn">Abbrechen</md-text-button>
-      <md-filled-tonal-button id="confirmDeleteConfirmBtn" style="--md-sys-color-secondary-container: var(--md-sys-color-error-container); --md-sys-color-on-secondary-container: var(--md-sys-color-on-error-container);">
-        Löschen
-        <span slot="icon" class="material-symbols-outlined">delete</span>
-      </md-filled-tonal-button>
+      <div class="m3-dialog-actions">
+        <md-text-button id="confirmDeleteCancelBtn">Abbrechen</md-text-button>
+        <md-filled-tonal-button id="confirmDeleteConfirmBtn" style="--md-sys-color-secondary-container: var(--md-sys-color-error-container); --md-sys-color-on-secondary-container: var(--md-sys-color-on-error-container);">
+          Löschen
+          <span slot="icon" class="material-symbols-outlined">delete</span>
+        </md-filled-tonal-button>
+      </div>
     </div>
-  </md-dialog>
+  </div>
 
   <!-- TOAST NOTIFICATION -->
   <div id="toast" class="toast">
@@ -1143,9 +1208,29 @@
       newMenu.open = !newMenu.open;
     });
 
-    // Dialogs
-    const userDialog = document.getElementById('addUserDialog');
-    const subDialog = document.getElementById('addSubDialog');
+    // Helper for Bulletproof M3 Modal Overlays
+    function createM3Modal(id) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('click', (e) => {
+          if (e.target === el) el.classList.remove('open');
+        });
+      }
+      return {
+        show: () => el && el.classList.add('open'),
+        close: () => el && el.classList.remove('open'),
+        element: el
+      };
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.m3-modal-overlay.open').forEach(m => m.classList.remove('open'));
+      }
+    });
+
+    const userDialog = createM3Modal('addUserModal');
+    const subDialog = createM3Modal('addSubModal');
 
     function openUserModal() {
       document.getElementById('inputUsername').value = '';
@@ -1598,9 +1683,9 @@
       }
     });
 
-    // --- CONFIRM DELETE DIALOG (Material Web Dialog) ---
+    // --- CONFIRM DELETE DIALOG (Material 3 Modal) ---
     let pendingDeleteAction = null;
-    const confirmDeleteDialog = document.getElementById('confirmDeleteDialog');
+    const confirmDeleteDialog = createM3Modal('confirmDeleteModal');
 
     function openConfirmDeleteDialog(title, message, onConfirm) {
       document.getElementById('confirmDeleteTitle').textContent = title;
