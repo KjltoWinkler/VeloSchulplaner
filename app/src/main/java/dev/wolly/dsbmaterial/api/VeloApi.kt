@@ -134,4 +134,43 @@ class VeloApi(
             return@withContext emptyList()
         }
     }
+
+    suspend fun getTimetable(classCode: String): Map<String, Map<String, dev.wolly.dsbmaterial.data.TimetableLesson>> = withContext(Dispatchers.IO) {
+        try {
+            val normalized = ClassCodeHelper.normalize(classCode)
+            if (normalized.isEmpty()) return@withContext emptyMap()
+            val url = resolveUrl("/api/timetables/${java.net.URLEncoder.encode(normalized, "UTF-8")}")
+            val request = Request.Builder().url(url).get().build()
+            val response = client.newCall(request).execute()
+            if (!response.isSuccessful) return@withContext emptyMap()
+
+            val body = response.body?.string() ?: return@withContext emptyMap()
+            val type = object : com.google.gson.reflect.TypeToken<Map<String, Map<String, dev.wolly.dsbmaterial.data.TimetableLesson>>>() {}.type
+            val schedule: Map<String, Map<String, dev.wolly.dsbmaterial.data.TimetableLesson>>? = gson.fromJson(body, type)
+            return@withContext schedule ?: emptyMap()
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to get timetable for $classCode", e)
+            return@withContext emptyMap()
+        }
+    }
+
+    suspend fun getStudentDashboard(): dev.wolly.dsbmaterial.data.StudentDashboardResponse? = withContext(Dispatchers.IO) {
+        if (authToken.isNullOrBlank()) return@withContext null
+        try {
+            val url = resolveUrl("/api/student/dashboard")
+            val request = Request.Builder()
+                .url(url)
+                .header("Authorization", "Bearer $authToken")
+                .get()
+                .build()
+            val response = client.newCall(request).execute()
+            if (!response.isSuccessful) return@withContext null
+
+            val body = response.body?.string() ?: return@withContext null
+            return@withContext gson.fromJson(body, dev.wolly.dsbmaterial.data.StudentDashboardResponse::class.java)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to get student dashboard", e)
+            return@withContext null
+        }
+    }
 }

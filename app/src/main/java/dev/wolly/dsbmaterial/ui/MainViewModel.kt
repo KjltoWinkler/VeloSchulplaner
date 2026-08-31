@@ -2,6 +2,7 @@ package dev.wolly.dsbmaterial.ui
 
 import android.app.Application
 import android.os.SystemClock
+import android.util.Log
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.lifecycle.AndroidViewModel
@@ -17,6 +18,7 @@ import dev.wolly.dsbmaterial.api.VeloApi
 import dev.wolly.dsbmaterial.data.ClassCodeHelper
 import dev.wolly.dsbmaterial.data.DataStoreManager
 import dev.wolly.dsbmaterial.data.SubstitutionEntry
+import dev.wolly.dsbmaterial.data.TimetableLesson
 import dev.wolly.dsbmaterial.data.UserProfile
 import dev.wolly.dsbmaterial.data.UserRole
 import com.google.gson.Gson
@@ -121,6 +123,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _selectedClasses = MutableStateFlow<List<String>>(emptyList())
     val selectedClasses: StateFlow<List<String>> = _selectedClasses
 
+    private val _timetable = MutableStateFlow<Map<String, Map<String, TimetableLesson>>>(emptyMap())
+    val timetable: StateFlow<Map<String, Map<String, TimetableLesson>>> = _timetable
+
+    private val _isTimetableLoading = MutableStateFlow(false)
+    val isTimetableLoading: StateFlow<Boolean> = _isTimetableLoading
+
     val autoFetchEnabled: StateFlow<Boolean> = dataStoreManager.autoFetchEnabledFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
@@ -208,6 +216,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     _uiState.value = UiState.Success(sortEntries(cached))
                 }
             }
+            val cachedTimetable = loadCachedTimetable()
+            if (cachedTimetable != null && cachedTimetable.isNotEmpty()) {
+                _timetable.value = cachedTimetable
+            }
         }
     }
 
@@ -219,6 +231,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         return entries.takeIf { it.isNotEmpty() }
     }
 
+    private suspend fun loadCachedTimetable(): Map<String, Map<String, TimetableLesson>>? {
+        val json = dataStoreManager.cachedTimetableFlow.first() ?: return null
+        if (json.isNullOrEmpty()) return null
+        return try {
+            val type = object : TypeToken<Map<String, Map<String, TimetableLesson>>>() {}.type
+            gson.fromJson(json, type)
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     private suspend fun saveCache(entries: List<SubstitutionEntry>) {
         if (entries.isEmpty()) return
         dataStoreManager.saveCachedEntries(gson.toJson(entries))
@@ -226,6 +249,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         dataStoreManager.saveLastUpdated(now)
         _lastUpdated.value = now
         _isOffline.value = false
+    }
+
+    private suspend fun saveTimetableCache(schedule: Map<String, Map<String, TimetableLesson>>) {
+        if (schedule.isEmpty()) return
+        dataStoreManager.saveCachedTimetable(gson.toJson(schedule))
     }
 
     private fun loadArchive() {
@@ -674,9 +702,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             dataStoreManager.clearCredentials()
             dataStoreManager.saveCachedEntries("")
+            dataStoreManager.saveCachedTimetable("")
             dataStoreManager.saveLastUpdated(0L)
             _lastUpdated.value = null
             _isOffline.value = false
+            _timetable.value = emptyMap()
             lastSuccessEntries = emptyList()
             _uiState.value = UiState.NeedsLogin
             _selectedTab.value = 0
@@ -723,6 +753,19 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 _uiState.value = UiState.Success(sortEntries(deduped))
                 saveCache(deduped)
                 archiveSubstitutions(deduped)
+
+                // Sync timetable for current student class
+                if (className.isNotEmpty()) {
+                    try {
+                        val schedule = veloApi.getTimetable(className)
+                        if (schedule.isNotEmpty()) {
+                            _timetable.value = schedule
+                            saveTimetableCache(schedule)
+                        }
+                    } catch (e: Exception) {
+                        Log.e("MainViewModel", "Failed to sync timetable in fetchData", e)
+                    }
+                }
             } catch (e: Exception) {
                 fallBackToCache(e.message ?: "Unbekannter Fehler")
             } finally {
@@ -764,6 +807,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val deduped = filtered.distinctBy { it.day + it.lesson + it.subject + it.room + it.art + it.text }
             saveCache(deduped)
             archiveSubstitutions(deduped)
+
+            // Sync timetable for current student class
+            if (normalizedClass.isNotEmpty()) {
+                try {
+                    val schedule = veloApi.getTimetable(normalizedClass)
+                    if (schedule.isNotEmpty()) {
+                        _timetable.value = schedule
+                        saveTimetableCache(schedule)
+                    }
+                } catch (e: Exception) {
+                    Log.e("MainViewModel", "Failed to sync timetable in private fetchData", e)
+                }
+            }
+
             ensureLoadingFeel()
             lastSuccessEntries = deduped
             _uiState.value = UiState.Success(sortEntries(deduped))
@@ -772,6 +829,26 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             fallBackToCache(e.message ?: "Unbekannter Fehler")
         } finally {
             _isRefreshing.value = false
+        }
+    }
+
+    fun loadTimetableForClass(classCode: String) {
+        viewModelScope.launch {
+            _isTimetableLoading.value = true
+            try {
+                val base = resolveBaseUrl()
+                val token = dataStoreManager.authTokenFlow.first()
+                val veloApi = VeloApi(base, token)
+                val schedule = veloApi.getTimetable(classCode)
+                if (schedule.isNotEmpty()) {
+                    _timetable.value = schedule
+                    saveTimetableCache(schedule)
+                }
+            } catch (e: Exception) {
+                Log.e("MainViewModel", "Failed to load timetable for $classCode", e)
+            } finally {
+                _isTimetableLoading.value = false
+            }
         }
     }
 

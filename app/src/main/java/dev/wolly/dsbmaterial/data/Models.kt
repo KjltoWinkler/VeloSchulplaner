@@ -65,6 +65,29 @@ data class SubstitutionsApiResponse(
     val entries: List<SubstitutionEntry> = emptyList()
 )
 
+@Immutable
+data class TimetableLesson(
+    val subject: String = "",
+    val teacher: String = "",
+    val room: String = ""
+)
+
+@Immutable
+data class ClassInfo(
+    val code: String = "",
+    val grade: Int = 0,
+    val branch: String = "",
+    val teacher: String = "",
+    val room: String = ""
+)
+
+data class StudentDashboardResponse(
+    val user: UserProfile? = null,
+    val classInfo: ClassInfo? = null,
+    val substitutions: List<SubstitutionEntry> = emptyList(),
+    val timetable: Map<String, Map<String, TimetableLesson>> = emptyMap()
+)
+
 object ClassCodeHelper {
     /**
      * Normalizes class abbreviations to format: [Number][a-z][H/R]

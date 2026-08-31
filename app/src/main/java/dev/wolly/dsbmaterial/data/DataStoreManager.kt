@@ -42,6 +42,7 @@ class DataStoreManager(private val context: Context) {
         val NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
         val CUSTOM_SERVER_URL = stringPreferencesKey("custom_server_url")
         val CACHED_ENTRIES = stringPreferencesKey("cached_entries")
+        val CACHED_TIMETABLE = stringPreferencesKey("cached_timetable")
         val LAST_UPDATED = longPreferencesKey("last_updated")
         val WEB_SERVER_ENABLED = booleanPreferencesKey("web_server_enabled")
     }
@@ -71,6 +72,7 @@ class DataStoreManager(private val context: Context) {
     val notificationsEnabledFlow: Flow<Boolean> = context.dataStore.data.map { it[NOTIFICATIONS_ENABLED] ?: false }
     val customServerUrlFlow: Flow<String?> = context.dataStore.data.map { it[CUSTOM_SERVER_URL] }
     val cachedEntriesFlow: Flow<String?> = context.dataStore.data.map { it[CACHED_ENTRIES] }
+    val cachedTimetableFlow: Flow<String?> = context.dataStore.data.map { it[CACHED_TIMETABLE] }
     val lastUpdatedFlow: Flow<Long> = context.dataStore.data.map { it[LAST_UPDATED] ?: 0L }
     val webServerEnabledFlow: Flow<Boolean> = context.dataStore.data.map { it[WEB_SERVER_ENABLED] ?: false }
 
@@ -170,6 +172,10 @@ class DataStoreManager(private val context: Context) {
 
     suspend fun saveCachedEntries(json: String) {
         context.dataStore.edit { it[CACHED_ENTRIES] = json }
+    }
+
+    suspend fun saveCachedTimetable(json: String) {
+        context.dataStore.edit { it[CACHED_TIMETABLE] = json }
     }
 
     suspend fun saveLastUpdated(timestamp: Long) {

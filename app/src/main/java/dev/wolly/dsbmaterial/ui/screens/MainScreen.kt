@@ -40,10 +40,12 @@ import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Archive
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -111,6 +113,8 @@ fun DSBApp(viewModel: MainViewModel) {
     val password by viewModel.password.collectAsState()
     val userRole by viewModel.userRole.collectAsState()
     val assignedClass by viewModel.assignedClass.collectAsState()
+    val timetable by viewModel.timetable.collectAsState()
+    val isTimetableLoading by viewModel.isTimetableLoading.collectAsState()
     val updateState by viewModel.updateState.collectAsState()
     val context = LocalContext.current
     val openUpdateDownload = { url: String ->
@@ -122,6 +126,7 @@ fun DSBApp(viewModel: MainViewModel) {
 
     val destinations = listOf(
         Destination(stringResource(R.string.label_home), Icons.Filled.Home, Icons.Outlined.Home),
+        Destination("Stundenplan", Icons.Filled.Schedule, Icons.Outlined.Schedule),
         Destination(stringResource(R.string.label_plans), Icons.Filled.CalendarMonth, Icons.Outlined.CalendarMonth),
         Destination(stringResource(R.string.label_archive), Icons.Filled.Archive, Icons.Outlined.Archive),
         Destination(stringResource(R.string.title_settings), Icons.Filled.Settings, Icons.Outlined.Settings)
@@ -293,8 +298,8 @@ fun DSBApp(viewModel: MainViewModel) {
                                 if (currentTab == 0) {
                                     ProfileButton(username = username, onClick = { showProfile = true })
                                 }
-                                if (currentTab == 1 && (uiState is UiState.Success || uiState is UiState.Idle)) {
-                                    val refreshing = uiState is UiState.Loading
+                                if ((currentTab == 1 || currentTab == 2) && (uiState is UiState.Success || uiState is UiState.Idle)) {
+                                    val refreshing = uiState is UiState.Loading || isTimetableLoading
                                     val refreshRotation by animateFloatAsState(
                                         targetValue = if (refreshing) 360f else 0f,
                                         animationSpec = if (refreshing) infiniteRepeatable(
@@ -309,7 +314,7 @@ fun DSBApp(viewModel: MainViewModel) {
                                             modifier = Modifier.rotate(refreshRotation)
                                         )
                                     }
-                                } else if (currentTab == 2 && archiveEntries.isNotEmpty()) {
+                                } else if (currentTab == 3 && archiveEntries.isNotEmpty()) {
                                     IconButton(onClick = { viewModel.clearArchive() }) {
                                         Icon(Icons.Default.DeleteSweep, contentDescription = stringResource(R.string.action_clear_archive))
                                     }
@@ -390,34 +395,41 @@ fun DSBApp(viewModel: MainViewModel) {
                                         onRefresh = { viewModel.fetchData() },
                                         onRetry = { viewModel.fetchData() }
                                     )
-                                    1 -> {
+                                    1 -> TimetableScreen(
+                                        timetable = timetable,
+                                        substitutions = currentEntries,
+                                        assignedClass = assignedClass,
+                                        isLoading = isTimetableLoading || isRefreshing,
+                                        onRefresh = { viewModel.fetchData() }
+                                    )
+                                    2 -> {
                                         val currentUiState = uiState
-                                    if (currentUiState is UiState.Success) {
-                                        DayList(
-                                            entries = currentUiState.entries,
-                                            selectedDay = selectedDay,
-                                            cardAlpha = cardAlpha,
-                                            isRefreshing = isRefreshing,
-                                            onRefresh = { viewModel.fetchData() },
-                                            onDayClick = { day, bounds ->
-                                                selectedDay = day
-                                                cardRect = bounds
-                                                showSheet = true
-                                            }
-                                        )
-                                    } else if (currentUiState is UiState.Error) {
-                                        ErrorScreen(currentUiState.message, onRetry = { viewModel.fetchData() })
-                                    } else {
-                                        Box(Modifier.fillMaxSize())
+                                        if (currentUiState is UiState.Success) {
+                                            DayList(
+                                                entries = currentUiState.entries,
+                                                selectedDay = selectedDay,
+                                                cardAlpha = cardAlpha,
+                                                isRefreshing = isRefreshing,
+                                                onRefresh = { viewModel.fetchData() },
+                                                onDayClick = { day, bounds ->
+                                                    selectedDay = day
+                                                    cardRect = bounds
+                                                    showSheet = true
+                                                }
+                                            )
+                                        } else if (currentUiState is UiState.Error) {
+                                            ErrorScreen(currentUiState.message, onRetry = { viewModel.fetchData() })
+                                        } else {
+                                            Box(Modifier.fillMaxSize())
+                                        }
                                     }
-                                }
-                                2 -> ArchiveScreen(
-                                    entries = archiveEntries,
-                                    isRoomFirst = isRoomFirst,
-                                    onRemoveGroup = { entries -> entries.forEach { viewModel.removeFromArchive(it) } },
-                                    onOpenCalendar = { showCalendar = true }
-                                )
-                                3 -> SettingsScreen(
+                                    3 -> ArchiveScreen(
+                                        entries = archiveEntries,
+                                        isRoomFirst = isRoomFirst,
+                                        onRemoveGroup = { entries -> entries.forEach { viewModel.removeFromArchive(it) } },
+                                        onOpenCalendar = { showCalendar = true }
+                                    )
+                                    4 -> SettingsScreen(
                                     isRoomFirst = isRoomFirst,
                                     sortByPeriod = sortByPeriod,
                                     dynamicColor = dynamicColor,
