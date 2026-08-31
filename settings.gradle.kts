@@ -22,6 +22,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Astra"
+rootProject.name = "Velo.Schulplaner"
 include(":app")
  

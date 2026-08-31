@@ -1,12 +1,12 @@
 <resources>
-    <string name="app_name">Astra</string>
-    <string name="title_main">Astra</string>
+    <string name="app_name">Velo.Schulplaner</string>
+    <string name="title_main">Velo.Schulplaner</string>
     <string name="label_home">Start</string>
     <string name="label_plans">Pläne</string>
     <string name="title_settings">Einstellungen</string>
-    <string name="title_login">DSBmobile Login</string>
+    <string name="title_login">Velo.Schulplaner Login</string>
     <string name="title_select_class">Klasse auswählen</string>
-    <string name="title_about">Über Astra</string>
+    <string name="title_about">Über Velo.Schulplaner</string>
     
     <string name="action_back">Zurück</string>
     <string name="action_refresh">Aktualisieren</string>
@@ -23,7 +23,7 @@
     <string name="label_profile">Profil</string>
     <string name="action_show_password">Passwort anzeigen</string>
     <string name="action_hide_password">Passwort verbergen</string>
-    <string name="label_manual_class">Manuelle Eingabe (z.B. 10a)</string>
+    <string name="label_manual_class">Manuelle Eingabe (z.B. 9aR)</string>
     <string name="label_show_all_classes">Alle Klassen anzeigen</string>
     <string name="label_preferences">Präferenzen</string>
     <string name="label_account">Konto</string>
@@ -43,19 +43,23 @@
     <string name="msg_update_available">Update verfügbar</string>
     <string name="desc_update_available">Version %1$s ist verfügbar</string>
     <string name="msg_up_to_date">Du bist auf dem neuesten Stand</string>
-    <string name="desc_up_to_date">Astra ist auf dem neuesten Stand</string>
+    <string name="desc_up_to_date">Velo.Schulplaner ist auf dem neuesten Stand</string>
     <string name="msg_update_error">Prüfung fehlgeschlagen</string>
     <string name="desc_update_error">Konnte nicht nach Updates suchen. Zum Wiederholen tippen.</string>
     <string name="action_download">Herunterladen</string>
     
-    <string name="desc_select_class">Wähle deine Klasse aus der Liste (Wegen einschränkungen werden nur klassen mit vertretungen angezeigt, wenn deine nicht angezeigt wird, gib sie manuell ein)</string>
+    <string name="desc_select_class">Wähle deine Klasse aus der Liste</string>
     <string name="desc_swap_default">Standard-Zuordnung</string>
     <string name="desc_swap_active">Raum und Typ Werte vertauscht</string>
     <string name="desc_switch_class">Anderen Klassenfilter wählen</string>
     <string name="desc_logout">Anmeldedaten entfernen und App zurücksetzen</string>
     <string name="desc_dynamic_color">Farben deines Hintergrundbildes nutzen (Android 12+)</string>
     <string name="desc_sort_period">Ordnet Vertretungen chronologisch</string>
-    <string name="desc_about">Version 2.0.0 • Entwickelt von WollyDev24</string>
+    <string name="desc_about">Version 2.0.0 • Velo.Schulplaner</string>
+    <string name="label_role_student">Schüler</string>
+    <string name="label_role_teacher">Lehrer</string>
+    <string name="label_role_admin">Administrator</string>
+    <string name="label_assigned_class">Klasse %1$s</string>
 
     <string name="action_apply">Anwenden</string>
     <string name="msg_no_substitutions">Keine Vertretungen gefunden.</string>
@@ -87,7 +91,7 @@
     <string name="label_multi_class_desc">Vertretungen für zusätzliche Klassen anzeigen</string>
     <string name="label_add_class">Klasse hinzufügen</string>
     <string name="label_class_hint">Klassenname (z.B. 10b)</string>
-    <string name="label_widget_title">Astra</string>
+    <string name="label_widget_title">Velo.Schulplaner</string>
     <string name="label_widget_desc">Vertretungen für heute</string>
     <string name="label_widget_no_data">Keine Vertretungen verfügbar</string>
     <string name="label_widget_updated">Aktualisiert %1$s</string>

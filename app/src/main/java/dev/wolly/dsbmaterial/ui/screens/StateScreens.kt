@@ -391,7 +391,7 @@ fun ClassSelectionScreen(classes: List<String>, onClassSelected: (String) -> Uni
             trailingIcon = {
                 if (customClass.isNotEmpty()) {
                     IconButton(
-                        onClick = { onClassSelected(customClass) },
+                        onClick = { onClassSelected(dev.wolly.dsbmaterial.data.ClassCodeHelper.normalize(customClass)) },
                         colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.primary)
                     ) {
                         Icon(Icons.Default.CheckCircle, contentDescription = stringResource(R.string.action_submit))

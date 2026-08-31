@@ -71,10 +71,18 @@ fun ProfileButton(
 fun ProfilePopover(
     username: String?,
     password: String?,
+    userRole: String? = null,
+    assignedClass: String? = null,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var passwordRevealed by remember { mutableStateOf(false) }
+    val roleLabel = when (userRole?.lowercase()?.trim()) {
+        "lehrer", "teacher" -> stringResource(R.string.label_role_teacher)
+        "admin" -> stringResource(R.string.label_role_admin)
+        else -> stringResource(R.string.label_role_student)
+    }
+
     Surface(
         modifier = modifier.shadow(12.dp, RoundedCornerShape(24.dp)),
         shape = RoundedCornerShape(24.dp),
@@ -84,7 +92,7 @@ fun ProfilePopover(
         Column(
             modifier = Modifier
                 .padding(16.dp)
-                .widthIn(min = 200.dp, max = 320.dp)
+                .widthIn(min = 220.dp, max = 340.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 val primary = MaterialTheme.colorScheme.primary
@@ -93,7 +101,7 @@ fun ProfilePopover(
                 val iconColor = MaterialTheme.colorScheme.onPrimary
                 Box(
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(44.dp)
                         .clip(CircleShape)
                         .background(Brush.linearGradient(gradient)),
                     contentAlignment = Alignment.Center
@@ -102,21 +110,26 @@ fun ProfilePopover(
                         Icons.Filled.Person,
                         contentDescription = null,
                         tint = iconColor,
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(26.dp)
                     )
                 }
                 Spacer(Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = stringResource(R.string.label_username),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
                         text = username.orEmpty().ifEmpty { "—" },
                         style = MaterialTheme.typography.titleMediumEmphasized,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
+                    )
+                    val detail = if (!assignedClass.isNullOrBlank()) {
+                        "$roleLabel • Klasse $assignedClass"
+                    } else {
+                        roleLabel
+                    }
+                    Text(
+                        text = detail,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
             }

@@ -1,0 +1,1535 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Velo.Schulplaner — Admin Portal</title>
+  
+  <!-- Fonts & Material Symbols -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Google+Sans+Text:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+
+  <!-- Material Web Components (ESM) from material-web.dev -->
+  <script type="importmap">
+    {
+      "imports": {
+        "@material/web/": "https://esm.run/@material/web/"
+      }
+    }
+  </script>
+  <script type="module">
+    import '@material/web/all.js';
+    import { styles as typescaleStyles } from '@material/web/typography/md-typescale-styles.js';
+    document.adoptedStyleSheets = [typescaleStyles.styleSheet];
+  </script>
+
+  <style>
+    :root {
+      /* M3 Tokens matching Google Workspace / Drive */
+      --md-sys-color-primary: #a8c7fa;
+      --md-sys-color-on-primary: #042e60;
+      --md-sys-color-primary-container: #004a77;
+      --md-sys-color-on-primary-container: #c2e7ff;
+      --md-sys-color-secondary: #c2e7ff;
+      --md-sys-color-secondary-container: #004d66;
+      --md-sys-color-on-secondary-container: #c2e8ff;
+      --md-sys-color-surface: #131314;
+      --md-sys-color-surface-container: #28292a;
+      --md-sys-color-surface-container-high: #333537;
+      --md-sys-color-surface-container-highest: #3d3f41;
+      --md-sys-color-on-surface: #e3e3e3;
+      --md-sys-color-on-surface-variant: #c4c7c5;
+      --md-sys-color-outline: #8e918f;
+      --md-sys-color-outline-variant: #444746;
+      --md-sys-color-error: #f2b8b5;
+      --md-sys-color-error-container: #8c1d18;
+      --md-sys-color-on-error-container: #f9dedc;
+      --md-ref-typeface-brand: 'Google Sans', 'Roboto', sans-serif;
+      --md-ref-typeface-plain: 'Google Sans Text', 'Roboto', sans-serif;
+
+      --drive-bg: #1b1b1b;
+      --drive-canvas-bg: #131314;
+      --drive-border-subtle: #2d2f31;
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        --md-sys-color-primary: #0b57d0;
+        --md-sys-color-on-primary: #ffffff;
+        --md-sys-color-primary-container: #d3e3fd;
+        --md-sys-color-on-primary-container: #041e49;
+        --md-sys-color-secondary: #00639b;
+        --md-sys-color-secondary-container: #c2e8ff;
+        --md-sys-color-on-secondary-container: #001e2f;
+        --md-sys-color-surface: #ffffff;
+        --md-sys-color-surface-container: #f0f4f9;
+        --md-sys-color-surface-container-high: #e9eef6;
+        --md-sys-color-surface-container-highest: #dde3ea;
+        --md-sys-color-on-surface: #1f1f1f;
+        --md-sys-color-on-surface-variant: #444746;
+        --md-sys-color-outline: #747775;
+        --md-sys-color-outline-variant: #c4c7c5;
+        --md-sys-color-error: #b3261e;
+        --md-sys-color-error-container: #f9dedc;
+        --md-sys-color-on-error-container: #410e0b;
+
+        --drive-bg: #f8fafd;
+        --drive-canvas-bg: #ffffff;
+        --drive-border-subtle: #e1e3e1;
+      }
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--md-ref-typeface-plain);
+      background-color: var(--drive-bg);
+      color: var(--md-sys-color-on-surface);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined' !important;
+      font-weight: normal;
+      font-style: normal;
+      font-size: 22px;
+      line-height: 1;
+      display: inline-block;
+      text-transform: none;
+      letter-spacing: normal;
+      word-wrap: normal;
+      white-space: nowrap;
+      direction: ltr;
+      vertical-align: middle;
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+
+    /* LOGIN OVERLAY */
+    .login-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--drive-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      padding: 16px;
+    }
+
+    .login-card {
+      background: var(--md-sys-color-surface-container);
+      border: 1px solid var(--md-sys-color-outline-variant);
+      border-radius: 28px;
+      padding: 40px;
+      width: 100%;
+      max-width: 440px;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35);
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .login-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 12px;
+    }
+
+    .login-logo {
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #0b57d0 0%, #00897b 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+    }
+
+    .login-title {
+      font-family: var(--md-ref-typeface-brand);
+      font-size: 1.6rem;
+      font-weight: 500;
+    }
+
+    .login-subtitle {
+      font-size: 0.9rem;
+      color: var(--md-sys-color-on-surface-variant);
+      line-height: 1.4;
+    }
+
+    .login-form {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .login-error {
+      background: var(--md-sys-color-error-container);
+      color: var(--md-sys-color-on-error-container);
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      display: none;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* TOP HEADER: GOOGLE DRIVE STYLE */
+    .drive-header {
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 16px;
+      background: var(--drive-bg);
+      gap: 16px;
+      flex-shrink: 0;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 240px;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .drive-logo {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #0b57d0 0%, #00897b 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+    }
+
+    .app-title {
+      font-family: var(--md-ref-typeface-brand);
+      font-size: 1.35rem;
+      font-weight: 500;
+      letter-spacing: -0.2px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .app-title span.badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: var(--md-sys-color-primary-container);
+      color: var(--md-sys-color-on-primary-container);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* CENTER SEARCH BAR (DRIVE STYLE) */
+    .header-center {
+      flex: 1;
+      max-width: 720px;
+    }
+
+    .drive-search-bar-wrap {
+      width: 100%;
+    }
+
+    .drive-search-bar-wrap md-outlined-text-field {
+      width: 100%;
+      --md-outlined-text-field-container-shape: 28px;
+      --md-outlined-text-field-top-space: 8px;
+      --md-outlined-text-field-bottom-space: 8px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .user-info-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--md-sys-color-surface-container);
+      border: 1px solid var(--md-sys-color-outline-variant);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+
+    .avatar-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--md-sys-color-primary-container);
+      color: var(--md-sys-color-on-primary-container);
+      font-weight: 700;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* APP BODY LAYOUT */
+    .app-body {
+      display: flex;
+      flex: 1;
+      height: calc(100vh - 64px);
+      overflow: hidden;
+    }
+
+    /* LEFT SIDEBAR (GOOGLE DRIVE STYLE) */
+    .drive-sidebar {
+      width: 256px;
+      flex-shrink: 0;
+      padding: 8px 12px 16px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .new-btn-container {
+      position: relative;
+    }
+
+    .drive-fab-btn {
+      --md-fab-container-shape: 16px;
+      --md-fab-container-height: 56px;
+      --md-fab-container-padding-horizontal: 20px;
+    }
+
+    /* "+ Neu" DROPDOWN MENU */
+    .new-dropdown-menu {
+      position: absolute;
+      top: 64px;
+      left: 0;
+      width: 220px;
+      background: var(--md-sys-color-surface-container-highest);
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+      padding: 6px 0;
+      display: none;
+      z-index: 1000;
+      border: 1px solid var(--md-sys-color-outline-variant);
+    }
+
+    .new-dropdown-menu.show {
+      display: block;
+    }
+
+    .menu-item {
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      color: var(--md-sys-color-on-surface);
+      transition: background 0.15s;
+    }
+
+    .menu-item:hover {
+      background: var(--md-sys-color-surface-container-high);
+    }
+
+    .menu-divider {
+      height: 1px;
+      background: var(--md-sys-color-outline-variant);
+      margin: 4px 0;
+    }
+
+    /* NAVIGATION ITEMS */
+    .nav-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .nav-item {
+      height: 44px;
+      border-radius: 22px;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      gap: 16px;
+      font-size: 0.92rem;
+      font-weight: 500;
+      cursor: pointer;
+      color: var(--md-sys-color-on-surface-variant);
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .nav-item:hover {
+      background: var(--md-sys-color-surface-container-high);
+      color: var(--md-sys-color-on-surface);
+    }
+
+    .nav-item.active {
+      background: var(--md-sys-color-secondary-container);
+      color: var(--md-sys-color-on-secondary-container);
+      font-weight: 600;
+    }
+
+    .nav-item.active .material-symbols-outlined {
+      font-variation-settings: 'FILL' 1;
+    }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding: 12px 16px;
+      background: var(--md-sys-color-surface-container);
+      border-radius: 12px;
+      font-size: 0.8rem;
+      color: var(--md-sys-color-on-surface-variant);
+      line-height: 1.4;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #81c995;
+      font-weight: 600;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #81c995;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.4; }
+      50% { opacity: 1; }
+      100% { opacity: 0.4; }
+    }
+
+    /* MAIN CANVAS (GOOGLE DRIVE STYLE) */
+    .drive-main-canvas {
+      flex: 1;
+      background: var(--drive-canvas-bg);
+      margin: 0 16px 16px 0;
+      border-radius: 16px;
+      border: 1px solid var(--drive-border-subtle);
+      overflow-y: auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .view-panel {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    /* TOP BAR INSIDE CANVAS */
+    .canvas-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .canvas-title {
+      font-family: var(--md-ref-typeface-brand);
+      font-size: 1.5rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* FILTER CHIPS ROW (M3 DRIVE STYLE) */
+    .drive-chips-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    /* TABLE: GOOGLE DRIVE STYLE */
+    .drive-table-container {
+      border: 1px solid var(--md-sys-color-outline-variant);
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--drive-canvas-bg);
+    }
+
+    table.drive-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+
+    table.drive-table th {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--md-sys-color-outline-variant);
+      color: var(--md-sys-color-on-surface-variant);
+      font-weight: 500;
+      font-size: 0.85rem;
+      background: var(--md-sys-color-surface-container);
+    }
+
+    table.drive-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--md-sys-color-outline-variant);
+      color: var(--md-sys-color-on-surface);
+      vertical-align: middle;
+    }
+
+    table.drive-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    table.drive-table tr:hover td {
+      background: var(--md-sys-color-surface-container-high);
+    }
+
+    /* ROLE BADGES & CHIPS */
+    .role-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 16px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .role-schueler {
+      background: rgba(168, 199, 250, 0.2);
+      color: var(--md-sys-color-primary);
+      border: 1px solid rgba(168, 199, 250, 0.4);
+    }
+
+    .role-lehrer {
+      background: rgba(129, 201, 149, 0.2);
+      color: #81c995;
+      border: 1px solid rgba(129, 201, 149, 0.4);
+    }
+
+    .role-admin {
+      background: rgba(253, 214, 99, 0.2);
+      color: #fdd663;
+      border: 1px solid rgba(253, 214, 99, 0.4);
+    }
+
+    .class-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 0.82rem;
+      background: var(--md-sys-color-surface-container-high);
+      border: 1px solid var(--md-sys-color-outline-variant);
+      color: var(--md-sys-color-on-surface);
+    }
+
+    .row-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      justify-content: flex-end;
+    }
+
+    /* INFO CARD FOR KLASSENSYSTEM */
+    .info-card {
+      background: var(--md-sys-color-surface-container);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 20px;
+      border-left: 4px solid var(--md-sys-color-primary);
+    }
+
+    .dialog-form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding: 8px 0;
+      min-width: 380px;
+    }
+
+    /* TOAST */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--md-sys-color-inverse-surface, #313033);
+      color: var(--md-sys-color-inverse-on-surface, #f4eff4);
+      padding: 12px 24px;
+      border-radius: 24px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+      z-index: 20000;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ADMIN LOGIN OVERLAY -->
+  <div id="loginOverlay" class="login-overlay">
+    <div class="login-card">
+      <div class="login-header">
+        <div class="login-logo">
+          <span class="material-symbols-outlined" style="font-size:32px;">admin_panel_settings</span>
+        </div>
+        <h1 class="login-title">Admin Portal</h1>
+        <p class="login-subtitle">Velo.Schulplaner Verwaltung & Konfiguration</p>
+      </div>
+
+      <div id="loginError" class="login-error">
+        <span class="material-symbols-outlined" style="font-size:18px;">error</span>
+        <span id="loginErrorText">Ungültige Anmeldedaten</span>
+      </div>
+
+      <form id="loginForm" class="login-form" onsubmit="return false;">
+        <md-outlined-text-field id="loginUsername" label="Administrator Benutzername" required autofocus value="admin">
+          <span slot="leading-icon" class="material-symbols-outlined">person</span>
+        </md-outlined-text-field>
+
+        <md-outlined-text-field id="loginPassword" label="Passwort" type="password" required>
+          <span slot="leading-icon" class="material-symbols-outlined">lock</span>
+        </md-outlined-text-field>
+
+        <md-filled-button id="loginSubmitBtn" style="height:48px; margin-top:8px;">
+          <span slot="icon" class="material-symbols-outlined">login</span>
+          Anmelden
+        </md-filled-button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MAIN APP CONTAINER (HIDDEN UNTIL AUTHENTICATED) -->
+  <div id="appContainer" style="display:none; flex-direction:column; height:100vh;">
+
+    <!-- TOP HEADER: GOOGLE DRIVE STYLE -->
+    <header class="drive-header">
+      <!-- LEFT LOGO & BRAND -->
+      <div class="header-left">
+        <div class="logo-container" id="brandLogo">
+          <div class="drive-logo">
+            <span class="material-symbols-outlined" style="font-size:24px;">school</span>
+          </div>
+          <div class="app-title">
+            Velo.Schulplaner
+            <span class="badge">Admin</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CENTER SEARCH BAR -->
+      <div class="header-center">
+        <div class="drive-search-bar-wrap">
+          <md-outlined-text-field id="globalSearchInput" placeholder="In Velo.Schulplaner suchen (Nutzer, Klassen, Fächer)...">
+            <span slot="leading-icon" class="material-symbols-outlined">search</span>
+          </md-outlined-text-field>
+        </div>
+      </div>
+
+      <!-- RIGHT ACTIONS -->
+      <div class="header-right">
+        <div class="user-info-badge">
+          <div class="avatar-btn" id="headerAvatar">A</div>
+          <span id="headerUsername">admin</span>
+        </div>
+        <md-icon-button title="Aktualisieren" id="headerRefreshBtn">
+          <span class="material-symbols-outlined">refresh</span>
+        </md-icon-button>
+        <md-icon-button title="Hilfe & Klassensystem" id="headerHelpBtn">
+          <span class="material-symbols-outlined">help_outline</span>
+        </md-icon-button>
+        <md-icon-button title="Abmelden" id="headerLogoutBtn" style="color:var(--md-sys-color-error);">
+          <span class="material-symbols-outlined">logout</span>
+        </md-icon-button>
+      </div>
+    </header>
+
+    <!-- APP BODY (SIDEBAR + MAIN CANVAS) -->
+    <div class="app-body">
+      
+      <!-- LEFT SIDEBAR -->
+      <aside class="drive-sidebar">
+        
+        <!-- "+ Neu" BUTTON WITH DROPDOWN -->
+        <div class="new-btn-container">
+          <md-fab variant="primary" label="Neu" id="driveNewBtn" class="drive-fab-btn">
+            <span slot="icon" class="material-symbols-outlined">add</span>
+          </md-fab>
+          <div class="new-dropdown-menu" id="newDropdownMenu">
+            <div class="menu-item" id="menuAddUser">
+              <span class="material-symbols-outlined" style="color:var(--md-sys-color-primary);">person_add</span>
+              Neuer Benutzer
+            </div>
+            <div class="menu-item" id="menuAddSub">
+              <span class="material-symbols-outlined" style="color:#81c995;">event_note</span>
+              Neuer Vertretungsplan
+            </div>
+            <div class="menu-divider"></div>
+            <div class="menu-item" id="menuTestClass">
+              <span class="material-symbols-outlined" style="color:#fdd663;">check_circle</span>
+              Klassenkürzel prüfen
+            </div>
+          </div>
+        </div>
+
+        <!-- NAVIGATION ITEMS -->
+        <ul class="nav-list">
+          <li class="nav-item active" id="navUsers" data-target="viewUsers">
+            <span class="material-symbols-outlined">group</span>
+            Benutzer
+          </li>
+          <li class="nav-item" id="navSubs" data-target="viewSubs">
+            <span class="material-symbols-outlined">calendar_month</span>
+            Vertretungspläne
+          </li>
+          <li class="nav-item" id="navClasses" data-target="viewClasses">
+            <span class="material-symbols-outlined">label</span>
+            Klassen & Kürzel
+          </li>
+        </ul>
+
+        <!-- SIDEBAR STATUS FOOTER -->
+        <div class="sidebar-footer">
+          <div class="status-indicator">
+            <span class="status-dot"></span>
+            Server online & gesichert
+          </div>
+          <div id="statsSummary">Lade Daten...</div>
+        </div>
+      </aside>
+
+      <!-- MAIN CONTENT CANVAS -->
+      <main class="drive-main-canvas">
+        
+        <!-- 1. BENUTZERVERWALTUNG VIEW -->
+        <div id="viewUsers" class="view-panel">
+          <div class="canvas-header">
+            <div class="canvas-title">
+              <span class="material-symbols-outlined" style="color:var(--md-sys-color-primary);">group</span>
+              Benutzerverwaltung
+            </div>
+            <md-filled-button id="canvasAddUserBtn">
+              <span slot="icon" class="material-symbols-outlined">person_add</span>
+              Benutzer anlegen
+            </md-filled-button>
+          </div>
+
+          <!-- DRIVE FILTER CHIPS (M3 MD-CHIP-SET) -->
+          <div class="drive-chips-row">
+            <md-chip-set>
+              <md-filter-chip label="Alle Rollen" selected id="chipRoleAll" data-role="all"></md-filter-chip>
+              <md-filter-chip label="Schüler" id="chipRoleSchueler" data-role="schueler"></md-filter-chip>
+              <md-filter-chip label="Lehrer" id="chipRoleLehrer" data-role="lehrer"></md-filter-chip>
+              <md-filter-chip label="Administratoren" id="chipRoleAdmin" data-role="admin"></md-filter-chip>
+            </md-chip-set>
+            <div style="margin-left:auto; min-width: 180px;">
+              <md-outlined-select id="userClassFilterDropdown" label="Klasse">
+                <md-select-option value="" selected><div slot="headline">Alle Klassen</div></md-select-option>
+              </md-outlined-select>
+            </div>
+          </div>
+
+          <!-- TABLE OF USERS -->
+          <div class="drive-table-container">
+            <table class="drive-table">
+              <thead>
+                <tr>
+                  <th>Benutzername</th>
+                  <th>Vollständiger Name</th>
+                  <th>Rolle</th>
+                  <th>Klasse</th>
+                  <th>Feste Zugangsdaten</th>
+                  <th style="text-align:right;">Aktionen</th>
+                </tr>
+              </thead>
+              <tbody id="userTableBody">
+                <!-- Rendered via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 2. VERTRETUNGSPLÄNE VIEW -->
+        <div id="viewSubs" class="view-panel" style="display:none;">
+          <div class="canvas-header">
+            <div class="canvas-title">
+              <span class="material-symbols-outlined" style="color:#81c995;">event_note</span>
+              Vertretungspläne
+            </div>
+            <md-filled-button id="canvasAddSubBtn">
+              <span slot="icon" class="material-symbols-outlined">add</span>
+              Eintrag hinzufügen
+            </md-filled-button>
+          </div>
+
+          <div class="drive-chips-row">
+            <md-chip-set id="subClassChips">
+              <md-filter-chip label="Alle Einträge" selected data-class-filter="all"></md-filter-chip>
+              <md-filter-chip label="9aR" data-class-filter="9aR"></md-filter-chip>
+              <md-filter-chip label="8aR" data-class-filter="8aR"></md-filter-chip>
+              <md-filter-chip label="7bH" data-class-filter="7bH"></md-filter-chip>
+            </md-chip-set>
+          </div>
+
+          <div class="drive-table-container">
+            <table class="drive-table">
+              <thead>
+                <tr>
+                  <th>Tag & Datum</th>
+                  <th>Klasse</th>
+                  <th>Stunde</th>
+                  <th>Fach</th>
+                  <th>Art</th>
+                  <th>Raum</th>
+                  <th>Vertretung</th>
+                  <th>Bemerkung</th>
+                  <th style="text-align:right;">Aktion</th>
+                </tr>
+              </thead>
+              <tbody id="subsTableBody">
+                <!-- Rendered via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 3. KLASSEN & KÜRZEL SYSTEM VIEW -->
+        <div id="viewClasses" class="view-panel" style="display:none;">
+          <div class="canvas-header">
+            <div class="canvas-title">
+              <span class="material-symbols-outlined" style="color:#fdd663;">label</span>
+              Klassenkürzel-Standard
+            </div>
+          </div>
+
+          <div class="info-card">
+            <h3 style="margin-bottom:8px; font-family:var(--md-ref-typeface-brand);">Regel für Klassenkürzel</h3>
+            <p style="line-height:1.6; color:var(--md-sys-color-on-surface);">
+              Format: <code>[Klassenstufe][a/b/c...][H/R]</code><br>
+              • <strong>Stufe:</strong> Jahrgang (z. B. <code>5</code>, <code>6</code>, <code>7</code>, <code>8</code>, <code>9</code>, <code>10</code>)<br>
+              • <strong>Zweig:</strong> immer <strong>klein</strong> (<code>a</code>, <code>b</code>, <code>c</code>, <code>d</code>, ...)<br>
+              • <strong>Schulform:</strong> immer <strong>groß</strong> am Ende (<code>H</code> für Hauptschule, <code>R</code> für Realschule)<br><br>
+              <strong>Beispiele:</strong> <span class="class-chip">9aR</span> (Klasse 9, a, Realschule), <span class="class-chip">8aR</span>, <span class="class-chip">7bH</span>, <span class="class-chip">10aR</span>
+            </p>
+          </div>
+
+          <div class="drive-table-container" style="padding:20px;">
+            <h4 style="margin-bottom:12px; font-family:var(--md-ref-typeface-brand);">Kürzel-Schnelltester</h4>
+            <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+              <md-outlined-text-field id="liveTestClassInput" label="Kürzel testen" placeholder="z. B. 9ar oder 8bh" style="max-width:280px;">
+              </md-outlined-text-field>
+              <div id="liveTestClassResult" style="font-weight:600; font-size:1rem;"></div>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- MD-DIALOG: ADD USER -->
+  <md-dialog id="addUserDialog">
+    <div slot="headline">
+      <span class="material-symbols-outlined" style="vertical-align:middle; margin-right:8px; color:var(--md-sys-color-primary);">person_add</span>
+      Neuen Benutzer anlegen
+    </div>
+    <form slot="content" id="addUserForm" method="dialog" class="dialog-form">
+      <md-outlined-text-field id="inputUsername" label="Benutzername *" required supporting-text="Einmaliger Login-Name (bleibt unverändert)">
+      </md-outlined-text-field>
+      
+      <div style="display:flex; gap:8px; align-items:flex-start;">
+        <md-outlined-text-field id="inputPassword" label="Festes Passwort *" required style="flex:1;">
+        </md-outlined-text-field>
+        <md-outlined-button type="button" id="btnGenPassword" style="margin-top:4px;" title="Zufälliges Passwort generieren">
+          <span class="material-symbols-outlined">casino</span>
+        </md-outlined-button>
+      </div>
+
+      <md-outlined-text-field id="inputName" label="Vollständiger Name (optional)">
+      </md-outlined-text-field>
+      
+      <md-outlined-select id="inputRole" label="Rolle *" required>
+        <md-select-option value="schueler" selected><div slot="headline">Schüler (Klassengebunden)</div></md-select-option>
+        <md-select-option value="lehrer"><div slot="headline">Lehrer</div></md-select-option>
+        <md-select-option value="admin"><div slot="headline">Administrator (Web-Zugang)</div></md-select-option>
+      </md-outlined-select>
+
+      <div id="classInputGroup">
+        <md-outlined-text-field id="inputClass" label="Klasse (z. B. 9aR, 8bH) *" supporting-text="Format: [Stufe][a-z][H/R]">
+        </md-outlined-text-field>
+        <div id="classValidationNotice" style="font-size:0.8rem; margin-top:4px; min-height:18px;"></div>
+      </div>
+      <div id="userModalError" style="color:var(--md-sys-color-error); font-size:0.85rem; display:none;"></div>
+    </form>
+    <div slot="actions">
+      <md-text-button id="closeAddUserModal">Abbrechen</md-text-button>
+      <md-filled-button id="submitAddUserBtn">Erstellen</md-filled-button>
+    </div>
+  </md-dialog>
+
+  <!-- MD-DIALOG: ADD SUBSTITUTION -->
+  <md-dialog id="addSubDialog">
+    <div slot="headline">
+      <span class="material-symbols-outlined" style="vertical-align:middle; margin-right:8px; color:#81c995;">event_note</span>
+      Vertretungseintrag anlegen
+    </div>
+    <form slot="content" id="addSubForm" method="dialog" class="dialog-form">
+      <md-outlined-text-field id="inputSubDay" label="Tag & Datum *" required>
+      </md-outlined-text-field>
+      <md-outlined-text-field id="inputSubClass" label="Klasse (z. B. 9aR) *" required>
+      </md-outlined-text-field>
+      <md-outlined-text-field id="inputSubLesson" label="Stunde (z. B. 1 - 2) *" required>
+      </md-outlined-text-field>
+      <md-outlined-text-field id="inputSubSubject" label="Fach *" required>
+      </md-outlined-text-field>
+      <md-outlined-select id="inputSubArt" label="Art">
+        <md-select-option value="Vertretung" selected><div slot="headline">Vertretung</div></md-select-option>
+        <md-select-option value="Entfall"><div slot="headline">Entfall</div></md-select-option>
+        <md-select-option value="Raumänderung"><div slot="headline">Raumänderung</div></md-select-option>
+        <md-select-option value="Betreuung"><div slot="headline">Betreuung</div></md-select-option>
+      </md-outlined-select>
+      <md-outlined-text-field id="inputSubRoom" label="Raum">
+      </md-outlined-text-field>
+      <md-outlined-text-field id="inputSubVertrVon" label="Vertreter (Kürzel)">
+      </md-outlined-text-field>
+      <md-outlined-text-field id="inputSubText" label="Bemerkung / Hinweis">
+      </md-outlined-text-field>
+      <div id="subModalError" style="color:var(--md-sys-color-error); font-size:0.85rem; display:none;"></div>
+    </form>
+    <div slot="actions">
+      <md-text-button id="closeAddSubModal">Abbrechen</md-text-button>
+      <md-filled-button id="submitAddSubBtn">Speichern</md-filled-button>
+    </div>
+  </md-dialog>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast" class="toast">
+    <span class="material-symbols-outlined" style="font-size:20px; color:#81c995;">check_circle</span>
+    <span id="toastText">Kopiert!</span>
+  </div>
+
+  <script>
+    let usersList = [];
+    let subsList = [];
+    let currentRoleFilter = 'all';
+    let currentClassFilter = '';
+    let currentSubClassFilter = 'all';
+
+    // --- AUTH TOKEN MANAGEMENT ---
+    function getAuthToken() {
+      return localStorage.getItem('velo_admin_token') || '';
+    }
+
+    function setAuthToken(token) {
+      if (token) {
+        localStorage.setItem('velo_admin_token', token);
+      } else {
+        localStorage.removeItem('velo_admin_token');
+      }
+    }
+
+    function getStoredAdminUser() {
+      try {
+        return JSON.parse(localStorage.getItem('velo_admin_user') || 'null');
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function setStoredAdminUser(user) {
+      if (user) {
+        localStorage.setItem('velo_admin_user', JSON.stringify(user));
+      } else {
+        localStorage.removeItem('velo_admin_user');
+      }
+    }
+
+    async function authFetch(url, options = {}) {
+      const token = getAuthToken();
+      options.headers = options.headers || {};
+      if (token) {
+        options.headers['Authorization'] = `Bearer ${token}`;
+      }
+      const res = await fetch(url, options);
+      if (res.status === 401 || res.status === 403) {
+        // Token invalid or unauthorized
+        showLoginScreen("Sitzung abgelaufen oder keine Admin-Rechte.");
+        throw new Error("Unauthorized");
+      }
+      return res;
+    }
+
+    function showLoginScreen(msg = "") {
+      setAuthToken("");
+      setStoredAdminUser(null);
+      document.getElementById('appContainer').style.display = 'none';
+      document.getElementById('loginOverlay').style.display = 'flex';
+      const errEl = document.getElementById('loginError');
+      if (msg) {
+        document.getElementById('loginErrorText').textContent = msg;
+        errEl.style.display = 'flex';
+      } else {
+        errEl.style.display = 'none';
+      }
+    }
+
+    function showAppScreen(user) {
+      document.getElementById('loginOverlay').style.display = 'none';
+      document.getElementById('appContainer').style.display = 'flex';
+      if (user) {
+        document.getElementById('headerUsername').textContent = user.username || 'admin';
+        document.getElementById('headerAvatar').textContent = (user.username || 'A')[0].toUpperCase();
+      }
+      loadUsers();
+      loadSubs();
+    }
+
+    // --- TOAST HELPER ---
+    function showToast(text) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastText').textContent = text;
+      toast.style.display = 'flex';
+      setTimeout(() => {
+        toast.style.display = 'none';
+      }, 3000);
+    }
+
+    // --- CLASS CODE LOGIC ---
+    function normalizeClassCode(input) {
+      if (!input) return '';
+      const trimmed = input.trim();
+      const match = trimmed.match(/^(\d+)([a-zA-Z])([a-zA-Z])$/);
+      if (match) {
+        const grade = match[1];
+        const section = match[2].toLowerCase(); // always lowercase (a, b, c...)
+        const type = match[3].toUpperCase();    // always uppercase (H, R)
+        if (type === 'H' || type === 'R') {
+          return `${grade}${section}${type}`;
+        }
+      }
+      return trimmed;
+    }
+
+    function isValidClassCode(code) {
+      return /^\d+[a-z][HR]$/.test(code);
+    }
+
+    // --- LOGIN HANDLER ---
+    document.getElementById('loginSubmitBtn').addEventListener('click', async () => {
+      const username = document.getElementById('loginUsername').value.trim();
+      const password = document.getElementById('loginPassword').value.trim();
+      const errEl = document.getElementById('loginError');
+      const errText = document.getElementById('loginErrorText');
+
+      if (!username || !password) {
+        errText.textContent = 'Bitte Benutzername und Passwort angeben.';
+        errEl.style.display = 'flex';
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          errText.textContent = data.error || 'Anmeldung fehlgeschlagen.';
+          errEl.style.display = 'flex';
+          return;
+        }
+
+        if (data.user.role !== 'admin') {
+          errText.textContent = 'Nur Administratoren haben Zugriff auf dieses Web-Portal.';
+          errEl.style.display = 'flex';
+          return;
+        }
+
+        setAuthToken(data.token);
+        setStoredAdminUser(data.user);
+        showAppScreen(data.user);
+      } catch (err) {
+        errText.textContent = 'Verbindung zum Server fehlgeschlagen.';
+        errEl.style.display = 'flex';
+      }
+    });
+
+    // Logout
+    document.getElementById('headerLogoutBtn').addEventListener('click', () => {
+      showLoginScreen();
+    });
+
+    // Nav Switcher
+    const navItems = document.querySelectorAll('.nav-item');
+    const viewPanels = document.querySelectorAll('.view-panel');
+
+    navItems.forEach(item => {
+      item.addEventListener('click', () => {
+        navItems.forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+        const target = item.getAttribute('data-target');
+        viewPanels.forEach(p => p.style.display = p.id === target ? 'block' : 'none');
+      });
+    });
+
+    // "+ Neu" Dropdown
+    const newBtn = document.getElementById('driveNewBtn');
+    const newMenu = document.getElementById('newDropdownMenu');
+
+    newBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      newMenu.classList.toggle('show');
+    });
+
+    document.addEventListener('click', () => {
+      newMenu.classList.remove('show');
+    });
+
+    // Dialogs
+    const userDialog = document.getElementById('addUserDialog');
+    const subDialog = document.getElementById('addSubDialog');
+
+    function openUserModal() {
+      document.getElementById('inputUsername').value = '';
+      document.getElementById('inputPassword').value = '';
+      document.getElementById('inputName').value = '';
+      document.getElementById('inputClass').value = '';
+      document.getElementById('classValidationNotice').textContent = '';
+      document.getElementById('userModalError').style.display = 'none';
+      userDialog.show();
+    }
+
+    function openSubModal() {
+      document.getElementById('inputSubDay').value = new Date().toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+      document.getElementById('inputSubClass').value = '';
+      document.getElementById('inputSubLesson').value = '';
+      document.getElementById('inputSubSubject').value = '';
+      document.getElementById('inputSubRoom').value = '';
+      document.getElementById('inputSubVertrVon').value = '';
+      document.getElementById('inputSubText').value = '';
+      document.getElementById('subModalError').style.display = 'none';
+      subDialog.show();
+    }
+
+    document.getElementById('menuAddUser').addEventListener('click', openUserModal);
+    document.getElementById('canvasAddUserBtn').addEventListener('click', openUserModal);
+    document.getElementById('closeAddUserModal').addEventListener('click', () => userDialog.close());
+
+    document.getElementById('menuAddSub').addEventListener('click', openSubModal);
+    document.getElementById('canvasAddSubBtn').addEventListener('click', openSubModal);
+    document.getElementById('closeAddSubModal').addEventListener('click', () => subDialog.close());
+
+    document.getElementById('menuTestClass').addEventListener('click', () => {
+      document.getElementById('navClasses').click();
+    });
+
+    document.getElementById('inputRole').addEventListener('change', (e) => {
+      const isStudent = e.target.value === 'schueler';
+      document.getElementById('classInputGroup').style.display = e.target.value === 'admin' ? 'none' : 'block';
+      const classField = document.getElementById('inputClass');
+      if (isStudent) {
+        classField.setAttribute('required', 'true');
+        classField.label = "Klasse (z. B. 9aR, 8bH) *";
+      } else {
+        classField.removeAttribute('required');
+        classField.label = "Klasse (optional für Lehrer)";
+      }
+    });
+
+    // Password generator helper
+    document.getElementById('btnGenPassword').addEventListener('click', () => {
+      const chars = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!#%";
+      let pwd = "";
+      for (let i = 0; i < 10; i++) {
+        pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      document.getElementById('inputPassword').value = pwd;
+    });
+
+    // Real-time class validation in add modal
+    document.getElementById('inputClass').addEventListener('input', (e) => {
+      const val = e.target.value.trim();
+      const notice = document.getElementById('classValidationNotice');
+      if (!val) {
+        notice.textContent = '';
+        return;
+      }
+      const norm = normalizeClassCode(val);
+      if (isValidClassCode(norm)) {
+        notice.innerHTML = `<span style="color:#81c995;">✓ Gültig: <strong>${norm}</strong></span>`;
+      } else {
+        notice.innerHTML = `<span style="color:var(--md-sys-color-error);">✗ Ungültig. Format: z. B. 9aR, 8bH (Stufe + a/b/c + H/R)</span>`;
+      }
+    });
+
+    // Fetch & Render Users
+    async function loadUsers() {
+      try {
+        const res = await authFetch('/api/admin/users');
+        usersList = await res.json();
+        renderUsers();
+        updateStats();
+        populateClassDropdown();
+      } catch (err) {
+        console.error("Fehler beim Laden der Benutzer:", err);
+      }
+    }
+
+    function renderUsers() {
+      const search = (document.getElementById('globalSearchInput').value || '').toLowerCase().trim();
+      const tbody = document.getElementById('userTableBody');
+      tbody.innerHTML = '';
+
+      const filtered = usersList.filter(u => {
+        const matchRole = currentRoleFilter === 'all' || u.role === currentRoleFilter;
+        const matchClass = !currentClassFilter || (u.assignedClass && u.assignedClass.toLowerCase() === currentClassFilter.toLowerCase());
+        const matchSearch = !search || u.username.toLowerCase().includes(search) || (u.name && u.name.toLowerCase().includes(search)) || (u.assignedClass && u.assignedClass.toLowerCase().includes(search));
+        return matchRole && matchClass && matchSearch;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:32px; color:var(--md-sys-color-outline);">Keine Benutzer gefunden</td></tr>`;
+        return;
+      }
+
+      filtered.forEach(u => {
+        const tr = document.createElement('tr');
+        const roleLabel = u.role === 'schueler' ? 'Schüler' : (u.role === 'lehrer' ? 'Lehrer' : 'Admin');
+        const pwdDisplay = u.initialPassword || '••••••••';
+
+        tr.innerHTML = `
+          <td><strong>${u.username}</strong></td>
+          <td>${u.name || '—'}</td>
+          <td><span class="role-badge role-${u.role}">${roleLabel}</span></td>
+          <td>${u.assignedClass ? `<span class="class-chip">${u.assignedClass}</span>` : '—'}</td>
+          <td>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <code style="background:var(--md-sys-color-surface-container); padding:3px 8px; border-radius:6px; font-family:monospace; font-size:0.85rem;">${pwdDisplay}</code>
+              <md-icon-button class="copy-creds-btn" data-username="${u.username}" data-password="${pwdDisplay}" data-class="${u.assignedClass || ''}" title="Zugangsdaten für Zettel/Ausgabe kopieren">
+                <span class="material-symbols-outlined" style="font-size:18px;">content_copy</span>
+              </md-icon-button>
+            </div>
+          </td>
+          <td>
+            <div class="row-actions">
+              ${u.username !== 'admin' ? `
+                <md-icon-button class="delete-user-btn" data-username="${u.username}" title="Benutzer löschen">
+                  <span class="material-symbols-outlined" style="color:var(--md-sys-color-error); font-size:18px;">delete</span>
+                </md-icon-button>
+              ` : '<span style="font-size:0.75rem; color:var(--md-sys-color-outline); padding-right:8px;">System</span>'}
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // Copy Credentials Handler
+      document.querySelectorAll('.copy-creds-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const uname = btn.getAttribute('data-username');
+          const pwd = btn.getAttribute('data-password');
+          const cls = btn.getAttribute('data-class');
+          let text = `Benutzername: ${uname}\nPasswort: ${pwd}`;
+          if (cls) text += `\nKlasse: ${cls}`;
+          navigator.clipboard.writeText(text).then(() => {
+            showToast(`Zugangsdaten für "${uname}" kopiert!`);
+          });
+        });
+      });
+
+      // Delete User Handler
+      document.querySelectorAll('.delete-user-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const uname = btn.getAttribute('data-username');
+          if (confirm(`Benutzer "${uname}" wirklich löschen?`)) {
+            await authFetch(`/api/admin/users/${uname}`, { method: 'DELETE' });
+            loadUsers();
+          }
+        });
+      });
+    }
+
+    // Role Filter Chips
+    const roleChips = [
+      document.getElementById('chipRoleAll'),
+      document.getElementById('chipRoleSchueler'),
+      document.getElementById('chipRoleLehrer'),
+      document.getElementById('chipRoleAdmin')
+    ];
+
+    roleChips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        roleChips.forEach(c => c.selected = (c === chip));
+        currentRoleFilter = chip.getAttribute('data-role');
+        renderUsers();
+      });
+    });
+
+    // Populate Class Filter Dropdown
+    function populateClassDropdown() {
+      const dropdown = document.getElementById('userClassFilterDropdown');
+      const classes = new Set();
+      usersList.forEach(u => {
+        if (u.assignedClass) classes.add(normalizeClassCode(u.assignedClass));
+      });
+
+      const sorted = Array.from(classes).sort();
+      let html = '<md-select-option value="" selected><div slot="headline">Alle Klassen</div></md-select-option>';
+      sorted.forEach(cls => {
+        html += `<md-select-option value="${cls}"><div slot="headline">${cls}</div></md-select-option>`;
+      });
+      dropdown.innerHTML = html;
+      dropdown.addEventListener('change', (e) => {
+        currentClassFilter = e.target.value;
+        renderUsers();
+      });
+    }
+
+    // Add User Save
+    document.getElementById('submitAddUserBtn').addEventListener('click', async () => {
+      const username = document.getElementById('inputUsername').value.trim();
+      const password = document.getElementById('inputPassword').value.trim();
+      const name = document.getElementById('inputName').value.trim();
+      const role = document.getElementById('inputRole').value;
+      const rawClass = document.getElementById('inputClass').value.trim();
+      const errorEl = document.getElementById('userModalError');
+
+      if (!username || !password || !role) {
+        errorEl.textContent = 'Benutzername, Passwort und Rolle sind erforderlich.';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      let assignedClass = '';
+      if (role === 'schueler') {
+        if (!rawClass) {
+          errorEl.textContent = 'Für Schüler ist eine Klasse erforderlich.';
+          errorEl.style.display = 'block';
+          return;
+        }
+        assignedClass = normalizeClassCode(rawClass);
+        if (!isValidClassCode(assignedClass)) {
+          errorEl.textContent = `Ungültiges Klassenkürzel "${rawClass}". Format: z. B. 9aR, 8bH.`;
+          errorEl.style.display = 'block';
+          return;
+        }
+      } else if (rawClass) {
+        assignedClass = normalizeClassCode(rawClass);
+      }
+
+      try {
+        const res = await authFetch('/api/admin/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password, name, role, assignedClass })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          errorEl.textContent = data.error || 'Fehler beim Erstellen.';
+          errorEl.style.display = 'block';
+          return;
+        }
+        userDialog.close();
+        showToast(`Benutzer "${username}" erfolgreich angelegt!`);
+        loadUsers();
+      } catch (err) {
+        errorEl.textContent = 'Netzwerkfehler beim Speichern.';
+        errorEl.style.display = 'block';
+      }
+    });
+
+    // Fetch & Render Substitutions
+    async function loadSubs() {
+      try {
+        const res = await authFetch('/api/substitutions');
+        const data = await res.json();
+        subsList = data.entries || [];
+        renderSubs();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function renderSubs() {
+      const tbody = document.getElementById('subsTableBody');
+      tbody.innerHTML = '';
+
+      const filtered = subsList.filter(s => currentSubClassFilter === 'all' || s.className.toLowerCase() === currentSubClassFilter.toLowerCase());
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:32px; color:var(--md-sys-color-outline);">Keine Vertretungen eingetragen</td></tr>`;
+        return;
+      }
+
+      filtered.forEach(s => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${s.day}</strong></td>
+          <td><span class="class-chip">${s.className}</span></td>
+          <td>${s.lesson}</td>
+          <td><strong>${s.subject}</strong></td>
+          <td><span class="role-badge role-lehrer">${s.art}</span></td>
+          <td>${s.room}</td>
+          <td>${s.vertrVon ? `${s.vertrVon} → ${s.nach || '?'}` : '—'}</td>
+          <td>${s.text || '—'}</td>
+          <td>
+            <div class="row-actions">
+              <md-icon-button class="delete-sub-btn" data-id="${s.id}" title="Eintrag löschen">
+                <span class="material-symbols-outlined" style="color:var(--md-sys-color-error); font-size:18px;">delete</span>
+              </md-icon-button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      document.querySelectorAll('.delete-sub-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.getAttribute('data-id');
+          if (confirm('Eintrag wirklich löschen?')) {
+            await authFetch(`/api/admin/substitutions/${id}`, { method: 'DELETE' });
+            loadSubs();
+          }
+        });
+      });
+    }
+
+    document.querySelectorAll('#subClassChips md-filter-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('#subClassChips md-filter-chip').forEach(c => c.selected = (c === chip));
+        currentSubClassFilter = chip.getAttribute('data-class-filter');
+        renderSubs();
+      });
+    });
+
+    // Add Substitution Save
+    document.getElementById('submitAddSubBtn').addEventListener('click', async () => {
+      const day = document.getElementById('inputSubDay').value.trim();
+      const rawClass = document.getElementById('inputSubClass').value.trim();
+      const lesson = document.getElementById('inputSubLesson').value.trim();
+      const subject = document.getElementById('inputSubSubject').value.trim();
+      const art = document.getElementById('inputSubArt').value;
+      const room = document.getElementById('inputSubRoom').value.trim();
+      const vertrVon = document.getElementById('inputSubVertrVon').value.trim();
+      const text = document.getElementById('inputSubText').value.trim();
+      const errorEl = document.getElementById('subModalError');
+
+      if (!day || !rawClass || !lesson || !subject) {
+        errorEl.textContent = 'Tag, Klasse, Stunde und Fach sind Pflichtfelder.';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      const className = normalizeClassCode(rawClass);
+
+      try {
+        const res = await authFetch('/api/admin/substitutions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ day, className, lesson, subject, art, room, vertrVon, text })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          errorEl.textContent = data.error || 'Fehler beim Erstellen.';
+          errorEl.style.display = 'block';
+          return;
+        }
+        subDialog.close();
+        showToast('Vertretungseintrag gespeichert!');
+        loadSubs();
+      } catch (err) {
+        errorEl.textContent = 'Netzwerkfehler beim Speichern.';
+        errorEl.style.display = 'block';
+      }
+    });
+
+    // Global Search & Refresh
+    const searchInput = document.getElementById('globalSearchInput');
+    searchInput.addEventListener('input', renderUsers);
+
+    document.getElementById('headerRefreshBtn').addEventListener('click', () => {
+      loadUsers();
+      loadSubs();
+    });
+
+    document.getElementById('headerHelpBtn').addEventListener('click', () => {
+      document.getElementById('navClasses').click();
+    });
+
+    function updateStats() {
+      const schuelerCount = usersList.filter(u => u.role === 'schueler').length;
+      const lehrerCount = usersList.filter(u => u.role === 'lehrer').length;
+      document.getElementById('statsSummary').textContent = `${schuelerCount} Schüler, ${lehrerCount} Lehrer`;
+    }
+
+    // Live Kürzel Tester
+    const liveTestInput = document.getElementById('liveTestClassInput');
+    const liveTestResult = document.getElementById('liveTestClassResult');
+    liveTestInput.addEventListener('input', () => {
+      const val = liveTestInput.value.trim();
+      if (!val) {
+        liveTestResult.innerHTML = '';
+        return;
+      }
+      const norm = normalizeClassCode(val);
+      if (isValidClassCode(norm)) {
+        liveTestResult.innerHTML = `<span class="class-chip" style="background:var(--md-sys-color-primary-container); color:var(--md-sys-color-on-primary-container);">✓ Gültig: ${norm}</span>`;
+      } else {
+        liveTestResult.innerHTML = `<span style="color:var(--md-sys-color-error);">✗ Ungültig (Muss z. B. 9aR, 8bH sein)</span>`;
+      }
+    });
+
+    // Auto-login check on page load
+    (function init() {
+      const token = getAuthToken();
+      const user = getStoredAdminUser();
+      if (token && user && user.role === 'admin') {
+        showAppScreen(user);
+      } else {
+        showLoginScreen();
+      }
+    })();
+  </script>
+</body>
+</html>

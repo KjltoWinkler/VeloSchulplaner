@@ -44,7 +44,7 @@ object UpdateChecker {
             val request = Request.Builder()
                 .url(RELEASES_LATEST_URL)
                 .header("Accept", "application/vnd.github+json")
-                .header("User-Agent", "Astra")
+                .header("User-Agent", "Velo.Schulplaner")
                 .build()
             val response = DSBNetwork.client.newCall(request).execute()
             if (!response.isSuccessful) {

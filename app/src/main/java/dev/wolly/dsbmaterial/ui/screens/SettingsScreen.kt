@@ -272,7 +272,7 @@ fun SettingsScreen(
                         IconButton(
                             onClick = {
                                 if (newClassName.isNotBlank()) {
-                                    onAddClass(newClassName)
+                                    onAddClass(dev.wolly.dsbmaterial.data.ClassCodeHelper.normalize(newClassName))
                                     newClassName = ""
                                     showAddClassField = false
                                 }

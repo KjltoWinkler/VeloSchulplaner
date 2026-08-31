@@ -20,6 +20,9 @@ class DataStoreManager(private val context: Context) {
         val USERNAME = stringPreferencesKey("username")
         val PASSWORD = stringPreferencesKey("password")
         val CLASS_NAME = stringPreferencesKey("class_name")
+        val USER_ROLE = stringPreferencesKey("user_role")
+        val USER_DISPLAY_NAME = stringPreferencesKey("user_display_name")
+        val AUTH_TOKEN = stringPreferencesKey("auth_token")
         val SWAP_DATA = booleanPreferencesKey("swap_data")
         val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
         val SORT_PERIOD = booleanPreferencesKey("sort_period")
@@ -46,6 +49,9 @@ class DataStoreManager(private val context: Context) {
     val usernameFlow: Flow<String?> = context.dataStore.data.map { it[USERNAME] }
     val passwordFlow: Flow<String?> = context.dataStore.data.map { it[PASSWORD] }
     val classNameFlow: Flow<String?> = context.dataStore.data.map { it[CLASS_NAME] }
+    val userRoleFlow: Flow<String?> = context.dataStore.data.map { it[USER_ROLE] }
+    val userDisplayNameFlow: Flow<String?> = context.dataStore.data.map { it[USER_DISPLAY_NAME] }
+    val authTokenFlow: Flow<String?> = context.dataStore.data.map { it[AUTH_TOKEN] }
     val swapDataFlow: Flow<Boolean> = context.dataStore.data.map { it[SWAP_DATA] ?: true }
     val dynamicColorFlow: Flow<Boolean> = context.dataStore.data.map { it[DYNAMIC_COLOR] ?: true }
     val sortPeriodFlow: Flow<Boolean> = context.dataStore.data.map { it[SORT_PERIOD] ?: true }
@@ -73,6 +79,17 @@ class DataStoreManager(private val context: Context) {
             settings[USERNAME] = username
             settings[PASSWORD] = password
             settings[CLASS_NAME] = className
+        }
+    }
+
+    suspend fun saveUserSession(user: UserProfile, password: String, token: String? = null) {
+        context.dataStore.edit { settings ->
+            settings[USERNAME] = user.username
+            settings[PASSWORD] = password
+            settings[CLASS_NAME] = user.assignedClass
+            settings[USER_ROLE] = user.role
+            settings[USER_DISPLAY_NAME] = user.name
+            if (token != null) settings[AUTH_TOKEN] = token
         }
     }
 

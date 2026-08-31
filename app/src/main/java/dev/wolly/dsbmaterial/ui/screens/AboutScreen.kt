@@ -136,7 +136,7 @@ fun AboutScreen(onBack: () -> Unit, onDebugTap: () -> Unit = {}) {
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        "An open-source material you replacement for the DSBmobile app. Built with modern Jetpack Compose for a better user experience.",
+                        "Velo.Schulplaner — Dein moderner, smarter Schul- und Vertretungsplaner mit Material 3 Expressive UI für die Merianschule Seligenstadt. Schneller Zugriff auf deine Pläne, offline verfügbar und immer aktuell.",
                         style = MaterialTheme.typography.bodyMedium,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                         modifier = Modifier.padding(24.dp),

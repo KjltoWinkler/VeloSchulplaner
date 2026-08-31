@@ -109,6 +109,8 @@ fun DSBApp(viewModel: MainViewModel) {
     val isOffline by viewModel.isOffline.collectAsState()
     val username by viewModel.username.collectAsState()
     val password by viewModel.password.collectAsState()
+    val userRole by viewModel.userRole.collectAsState()
+    val assignedClass by viewModel.assignedClass.collectAsState()
     val updateState by viewModel.updateState.collectAsState()
     val context = LocalContext.current
     val openUpdateDownload = { url: String ->
@@ -476,6 +478,8 @@ fun DSBApp(viewModel: MainViewModel) {
                                 showProfile = showProfile && showNavCondition,
                                 username = username,
                                 password = password,
+                                userRole = userRole,
+                                assignedClass = assignedClass,
                                 onDismiss = { showProfile = false },
                                 modifier = Modifier
                                     .align(Alignment.TopEnd)
@@ -731,6 +735,8 @@ private fun ProfileOverlay(
     showProfile: Boolean,
     username: String?,
     password: String?,
+    userRole: String? = null,
+    assignedClass: String? = null,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -743,6 +749,8 @@ private fun ProfileOverlay(
         ProfilePopover(
             username = username,
             password = password,
+            userRole = userRole,
+            assignedClass = assignedClass,
             onDismiss = onDismiss
         )
     }

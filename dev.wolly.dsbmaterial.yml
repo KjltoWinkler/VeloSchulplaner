@@ -9,12 +9,12 @@ SourceCode: https://github.com/WollyDev24/DSBmaterial
 IssueTracker: https://github.com/WollyDev24/DSBmaterial/issues
 Changelog: https://github.com/WollyDev24/DSBmaterial/releases
 
-AutoName: Astra
-Summary: Material You alternative for DSBmobile
+AutoName: Velo.Schulplaner
+Summary: Material You Schulplaner für Merianschule Seligenstadt
 Description: |-
-  Astra is a modern, native Material You Expressive replacement for the
-  official DSBmobile app. It shows your school's daily substitution plan in a
-  clean, fast and customizable interface.
+  Velo.Schulplaner is a modern, native Material You Expressive school planner and
+  substitution plan viewer for Merianschule Seligenstadt. It shows the daily
+  substitution plan in a clean, fast and customizable interface.
 
   Features:
   * Material You Expressive design with dynamic color and themes

@@ -782,6 +782,6 @@ fun buildShareText(day: String, entries: List<SubstitutionEntry>, isRoomFirst: B
         }
     }
     sb.appendLine()
-    sb.appendLine("Astra: https://github.com/wollydev24/DSBmaterial")
+    sb.appendLine("Velo.Schulplaner")
     return sb.toString()
 }

@@ -13,8 +13,12 @@ import dev.wolly.dsbmaterial.LocalWebServer
 import dev.wolly.dsbmaterial.api.AppUpdate
 import dev.wolly.dsbmaterial.api.DSBMobileAPI
 import dev.wolly.dsbmaterial.api.UpdateChecker
+import dev.wolly.dsbmaterial.api.VeloApi
+import dev.wolly.dsbmaterial.data.ClassCodeHelper
 import dev.wolly.dsbmaterial.data.DataStoreManager
 import dev.wolly.dsbmaterial.data.SubstitutionEntry
+import dev.wolly.dsbmaterial.data.UserProfile
+import dev.wolly.dsbmaterial.data.UserRole
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.flow.*
@@ -100,6 +104,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     val password: StateFlow<String?> = dataStoreManager.passwordFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    val userRole: StateFlow<String?> = dataStoreManager.userRoleFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "schueler")
+
+    val userDisplayName: StateFlow<String?> = dataStoreManager.userDisplayNameFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    val assignedClass: StateFlow<String?> = dataStoreManager.classNameFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     private val _archive = MutableStateFlow<List<SubstitutionEntry>>(emptyList())
@@ -233,7 +246,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             dataStoreManager.selectedClassesFlow.collect { json ->
                 if (!json.isNullOrEmpty()) {
-                    _selectedClasses.value = json.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+                    _selectedClasses.value = json.split(",").map { ClassCodeHelper.normalize(it) }.filter { it.isNotEmpty() }
                 }
             }
         }
@@ -482,10 +495,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun addSelectedClass(className: String) {
         if (className.isBlank()) return
-        val trimmed = className.trim()
-        if (_selectedClasses.value.contains(trimmed)) return
+        val normalized = ClassCodeHelper.normalize(className)
+        if (_selectedClasses.value.contains(normalized)) return
         viewModelScope.launch {
-            val updated = _selectedClasses.value + trimmed
+            val updated = _selectedClasses.value + normalized
             _selectedClasses.value = updated
             dataStoreManager.saveSelectedClasses(updated)
             fetchData()
@@ -493,8 +506,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun removeSelectedClass(className: String) {
+        val normalized = ClassCodeHelper.normalize(className)
         viewModelScope.launch {
-            val updated = _selectedClasses.value.filter { it != className }
+            val updated = _selectedClasses.value.filter { it != normalized && it != className }
             _selectedClasses.value = updated
             dataStoreManager.saveSelectedClasses(updated)
             fetchData()
@@ -549,8 +563,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
             if (username.isNullOrEmpty() || password.isNullOrEmpty()) {
                 _uiState.value = UiState.NeedsLogin
-            } else if (className.isEmpty()) {
-                fetchClasses(username, password)
             } else {
                 fetchData(username, password, className)
             }
@@ -559,8 +571,32 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun login(username: String, password: String) {
         isDemoMode = false
+        _uiState.value = UiState.Loading
         viewModelScope.launch {
-            fetchClasses(username, password)
+            val base = resolveBaseUrl()
+            val veloApi = VeloApi(base)
+            val auth = veloApi.login(username, password)
+            
+            if (auth.success && auth.user != null) {
+                val user = auth.user
+                if (user.isAdmin) {
+                    ensureLoadingFeel()
+                    _uiState.value = UiState.Error("Administrator-Accounts melden sich bitte über das Web-Portal an.")
+                    return@launch
+                }
+                // Successful login via Velo.Schulplaner API
+                dataStoreManager.saveUserSession(user, password, auth.token)
+                ensureLoadingFeel()
+                fetchData(username, password, user.assignedClass)
+            } else {
+                // If not a Velo server or error, attempt DSB fallback or show error
+                if (base.contains("dsbmobile") || base.isEmpty()) {
+                    fetchClasses(username, password)
+                } else {
+                    ensureLoadingFeel()
+                    _uiState.value = UiState.Error(auth.error ?: "Anmeldung fehlgeschlagen. Bitte Zugangsdaten prüfen.")
+                }
+            }
         }
     }
 
@@ -570,10 +606,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             delay(1000)
             val demoEntries = listOf(
-                SubstitutionEntry("Montag", "Vertretung", "10a", "1 - 2", "Mathematik", "R101", "", "", "Lehrer krank", ""),
-                SubstitutionEntry("Montag", "Entfall", "10a", "3", "Physik", "R102", "", "", "", ""),
-                SubstitutionEntry("Dienstag", "Raumänderung", "10a", "5", "Englisch", "Turnhalle", "", "", "Wasserschaden in R105", ""),
-                SubstitutionEntry("Mittwoch", "Vertretung", "10a", "4 - 5", "Geschichte", "R203", "", "", "", "")
+                SubstitutionEntry("Montag", "Vertretung", "9aR", "1 - 2", "Mathematik", "R102", "MÜL", "SCH", "Aufgaben Buch S. 42", ""),
+                SubstitutionEntry("Montag", "Entfall", "9aR", "5", "Physik", "---", "BEC", "", "Hitzefrei", ""),
+                SubstitutionEntry("Dienstag", "Raumänderung", "9aR", "3 - 4", "Englisch", "Turnhalle", "", "", "Wasserschaden in R105", ""),
+                SubstitutionEntry("Mittwoch", "Vertretung", "9aR", "4 - 5", "Geschichte", "R203", "KLE", "BAU", "", "")
             )
             lastSuccessEntries = demoEntries
             _uiState.value = UiState.Success(sortEntries(demoEntries))
@@ -584,24 +620,30 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private suspend fun fetchClasses(u: String, p: String) {
         _uiState.value = UiState.Loading
         try {
-            val api = DSBMobileAPI(u, p, resolveBaseUrl())
-            val classes = api.getAvailableClasses()
+            val base = resolveBaseUrl()
+            val veloApi = VeloApi(base)
+            var classes = veloApi.getAvailableClasses()
+            if (classes.isEmpty()) {
+                val dsbApi = DSBMobileAPI(u, p, base)
+                classes = dsbApi.getAvailableClasses()
+            }
             ensureLoadingFeel()
             if (classes.isEmpty()) {
-                _uiState.value = UiState.Error("No classes found. Check your credentials.")
+                _uiState.value = UiState.Error("Keine Klassen gefunden. Bitte Zugangsdaten prüfen.")
             } else {
                 _uiState.value = UiState.SelectingClass(classes, u, p)
             }
         } catch (e: Exception) {
             ensureLoadingFeel()
-            _uiState.value = UiState.Error(e.message ?: "Login failed")
+            _uiState.value = UiState.Error(e.message ?: "Anmeldung fehlgeschlagen")
         }
     }
 
     fun selectClass(username: String, password: String, className: String) {
+        val normalized = ClassCodeHelper.normalize(className)
         viewModelScope.launch {
-            dataStoreManager.saveCredentials(username, password, className)
-            fetchData(username, password, className)
+            dataStoreManager.saveCredentials(username, password, normalized)
+            fetchData(username, password, normalized)
         }
     }
 
@@ -651,17 +693,28 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
             _isRefreshing.value = true
             try {
-                val api = DSBMobileAPI(username, password, resolveBaseUrl())
-                val allRaw = api.getSubstitutions("")
+                val base = resolveBaseUrl()
+                val token = dataStoreManager.authTokenFlow.first()
+                val veloApi = VeloApi(base, token)
+                var rawEntries = veloApi.getSubstitutions(classFilter = className)
 
-                val filtered = if (className.isEmpty() && _selectedClasses.value.isEmpty()) {
-                    allRaw
+                if (rawEntries.isEmpty() && (base.contains("dsbmobile") || base.isEmpty())) {
+                    val dsbApi = DSBMobileAPI(username, password, base)
+                    rawEntries = dsbApi.getSubstitutions("")
+                }
+
+                val allClassNames = mutableSetOf<String>()
+                if (className.isNotEmpty()) allClassNames.add(ClassCodeHelper.normalize(className))
+                allClassNames.addAll(_selectedClasses.value.map { ClassCodeHelper.normalize(it) })
+
+                val filtered = if (allClassNames.isEmpty()) {
+                    rawEntries
                 } else {
-                    val allClassNames = mutableSetOf<String>()
-                    if (className.isNotEmpty()) allClassNames.add(className)
-                    allClassNames.addAll(_selectedClasses.value)
-                    allRaw.filter { entry ->
-                        allClassNames.any { cls -> entry.className.equals(cls, ignoreCase = true) }
+                    rawEntries.filter { entry ->
+                        val entryNorm = ClassCodeHelper.normalize(entry.className)
+                        allClassNames.any { cls -> 
+                            entryNorm.equals(cls, ignoreCase = true) || entry.className.equals(cls, ignoreCase = true)
+                        }
                     }
                 }
 
@@ -671,7 +724,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 saveCache(deduped)
                 archiveSubstitutions(deduped)
             } catch (e: Exception) {
-                fallBackToCache(e.message ?: "Unknown error")
+                fallBackToCache(e.message ?: "Unbekannter Fehler")
             } finally {
                 _isRefreshing.value = false
             }
@@ -682,17 +735,29 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (_uiState.value !is UiState.Success) _uiState.value = UiState.Loading
         _isRefreshing.value = true
         try {
-            val api = DSBMobileAPI(u, p, resolveBaseUrl())
-            val allRaw = api.getSubstitutions("")
+            val base = resolveBaseUrl()
+            val token = dataStoreManager.authTokenFlow.first()
+            val veloApi = VeloApi(base, token)
+            val normalizedClass = ClassCodeHelper.normalize(c)
+            var rawEntries = veloApi.getSubstitutions(classFilter = normalizedClass)
 
-            val filtered = if (c.isEmpty() && _selectedClasses.value.isEmpty()) {
-                allRaw
+            if (rawEntries.isEmpty() && (base.contains("dsbmobile") || base.isEmpty())) {
+                val dsbApi = DSBMobileAPI(u, p, base)
+                rawEntries = dsbApi.getSubstitutions("")
+            }
+
+            val allClassNames = mutableSetOf<String>()
+            if (normalizedClass.isNotEmpty()) allClassNames.add(normalizedClass)
+            allClassNames.addAll(_selectedClasses.value.map { ClassCodeHelper.normalize(it) })
+
+            val filtered = if (allClassNames.isEmpty()) {
+                rawEntries
             } else {
-                val allClassNames = mutableSetOf<String>()
-                if (c.isNotEmpty()) allClassNames.add(c)
-                allClassNames.addAll(_selectedClasses.value)
-                allRaw.filter { entry ->
-                    allClassNames.any { cls -> entry.className.equals(cls, ignoreCase = true) }
+                rawEntries.filter { entry ->
+                    val entryNorm = ClassCodeHelper.normalize(entry.className)
+                    allClassNames.any { cls -> 
+                        entryNorm.equals(cls, ignoreCase = true) || entry.className.equals(cls, ignoreCase = true)
+                    }
                 }
             }
 
@@ -704,7 +769,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _uiState.value = UiState.Success(sortEntries(deduped))
         } catch (e: Exception) {
             ensureLoadingFeel()
-            fallBackToCache(e.message ?: "Unknown error")
+            fallBackToCache(e.message ?: "Unbekannter Fehler")
         } finally {
             _isRefreshing.value = false
         }

@@ -1,6 +1,6 @@
-Astra is a modern, native Material You Expressive replacement for the official DSBmobile app. It shows your school's daily substitution plan in a clean, fast and customizable interface.
+Velo.Schulplaner is a modern, native Material You Expressive school planner and substitution plan viewer for Merianschule Seligenstadt (based on DSBmobile). It shows your school's daily substitution plan in a clean, fast and customizable interface.
 
-The official DSBmobile app has not been updated in years and is not native at all. Astra is built from scratch with Kotlin and Jetpack Compose.
+Velo.Schulplaner is built from scratch with Kotlin and Jetpack Compose.
 
 Features:
 
@@ -12,6 +12,6 @@ Features:
 - Theme picker with many accent colors
 - Local webserver to share the plan on your home network
 - Debug mode and offline state screens
-- Supports German school substitution data via the DSBmobile API
+- Supports school substitution data via the DSBmobile API
 
-Astra is free and open source, licensed under the Apache 2.0 License.
+Velo.Schulplaner is free and open source, licensed under the Apache 2.0 License.

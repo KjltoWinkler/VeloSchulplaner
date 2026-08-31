@@ -1,0 +1,590 @@
+const express = require("express");
+const cors = require("cors");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
+const path = require("path");
+const fs = require("fs");
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+const JWT_SECRET = process.env.JWT_SECRET || "velo-schulplaner-secret-key-change-in-production";
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
+const ADMIN_DEFAULT_PASSWORD = process.env.ADMIN_DEFAULT_PASSWORD || "adminpassword";
+
+// --- MIDDLEWARES ---
+app.use(
+  helmet({
+    contentSecurityPolicy: false, // Allows Material Web CDN & Google Fonts in admin portal
+    crossOriginEmbedderPolicy: false
+  })
+);
+
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || "*",
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
+
+app.use(express.json());
+app.use(express.static(path.join(__dirname, "public")));
+
+// Rate limiting for auth endpoints (brute-force protection)
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 50, // max 50 attempts per 15 minutes
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Zu viele Anmeldeversuche von dieser IP. Bitte warte einige Minuten." }
+});
+
+// --- PERSISTENCE & DATA ---
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "data");
+const USERS_FILE = path.join(DATA_DIR, "users.json");
+const SUBS_FILE = path.join(DATA_DIR, "substitutions.json");
+
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+
+function hashPassword(plainText) {
+  return bcrypt.hashSync(plainText, 10);
+}
+
+function verifyPassword(plainText, storedHash) {
+  if (!storedHash) return false;
+  if (storedHash.startsWith("$2a$") || storedHash.startsWith("$2b$")) {
+    return bcrypt.compareSync(plainText, storedHash);
+  }
+  // Fallback for initial legacy plaintext passwords
+  return plainText === storedHash;
+}
+
+// Initial seed data
+const initialAdminPasswordHash = hashPassword(ADMIN_DEFAULT_PASSWORD);
+const defaultUsers = [
+  {
+    username: "admin",
+    passwordHash: initialAdminPasswordHash,
+    initialPassword: ADMIN_DEFAULT_PASSWORD,
+    role: "admin",
+    name: "System Administrator",
+    assignedClass: ""
+  },
+  {
+    username: "schueler9a",
+    passwordHash: hashPassword("password123"),
+    initialPassword: "password123",
+    role: "schueler",
+    name: "Max Mustermann",
+    assignedClass: "9aR"
+  },
+  {
+    username: "schueler8a",
+    passwordHash: hashPassword("password123"),
+    initialPassword: "password123",
+    role: "schueler",
+    name: "Laura Schmidt",
+    assignedClass: "8aR"
+  },
+  {
+    username: "lehrer_mueller",
+    passwordHash: hashPassword("password123"),
+    initialPassword: "password123",
+    role: "lehrer",
+    name: "Hr. Müller (MÜL)",
+    assignedClass: ""
+  }
+];
+
+const defaultSubstitutions = [
+  {
+    id: "sub-1",
+    day: "Montag, 18.08.2026",
+    className: "9aR",
+    lesson: "1 - 2",
+    subject: "Mathematik",
+    art: "Vertretung",
+    room: "R102",
+    vertrVon: "MÜL",
+    nach: "SCH",
+    text: "Aufgaben im Buch S. 42 bearbeiten"
+  },
+  {
+    id: "sub-2",
+    day: "Montag, 18.08.2026",
+    className: "9aR",
+    lesson: "5",
+    subject: "Physik",
+    art: "Entfall",
+    room: "---",
+    vertrVon: "BEC",
+    nach: "",
+    text: "Hitzefrei / Entfall"
+  },
+  {
+    id: "sub-3",
+    day: "Dienstag, 19.08.2026",
+    className: "9aR",
+    lesson: "3 - 4",
+    subject: "Englisch",
+    art: "Raumänderung",
+    room: "Turnhalle",
+    vertrVon: "",
+    nach: "",
+    text: "Wasserschaden in R105"
+  },
+  {
+    id: "sub-4",
+    day: "Montag, 18.08.2026",
+    className: "8aR",
+    lesson: "3",
+    subject: "Deutsch",
+    art: "Vertretung",
+    room: "R204",
+    vertrVon: "WEI",
+    nach: "MÜL",
+    text: "Lektüre lesen"
+  },
+  {
+    id: "sub-5",
+    day: "Dienstag, 19.08.2026",
+    className: "7bH",
+    lesson: "2",
+    subject: "Biologie",
+    art: "Entfall",
+    room: "---",
+    vertrVon: "KLE",
+    nach: "",
+    text: "Entfall"
+  }
+];
+
+function readData(file, fallback) {
+  try {
+    if (fs.existsSync(file)) {
+      const data = fs.readFileSync(file, "utf8");
+      return JSON.parse(data);
+    }
+  } catch (err) {
+    console.error("Error reading " + file, err);
+  }
+  writeData(file, fallback);
+  return fallback;
+}
+
+function writeData(file, data) {
+  try {
+    fs.writeFileSync(file, JSON.stringify(data, null, 2), "utf8");
+  } catch (err) {
+    console.error("Error writing " + file, err);
+  }
+}
+
+// Migrate any legacy users file if needed (ensure bcrypt hashes & initialPassword)
+function ensureUserMigration() {
+  const users = readData(USERS_FILE, defaultUsers);
+  let changed = false;
+  users.forEach((u) => {
+    if (!u.passwordHash && u.password) {
+      u.passwordHash = hashPassword(u.password);
+      if (!u.initialPassword) u.initialPassword = u.password;
+      delete u.password;
+      changed = true;
+    }
+    if (u.assignedClass) {
+      const norm = normalizeClassCode(u.assignedClass);
+      if (norm !== u.assignedClass) {
+        u.assignedClass = norm;
+        changed = true;
+      }
+    }
+  });
+  if (changed) {
+    writeData(USERS_FILE, users);
+  }
+}
+ensureUserMigration();
+
+// --- CLASS CODE NORMALIZATION & VALIDATION ---
+// Format: <Grade><stream_letter><SchoolType> -> e.g. 9aR, 8bH, 10cR
+function normalizeClassCode(input) {
+  if (!input) return "";
+  const trimmed = input.trim();
+  const match = trimmed.match(/^(\d+)([a-zA-Z])([a-zA-Z])$/);
+  if (match) {
+    const grade = match[1];
+    const section = match[2].toLowerCase(); // a, b, c... always lowercase
+    const type = match[3].toUpperCase();    // H, R always uppercase
+    if (type === "H" || type === "R") {
+      return `${grade}${section}${type}`;
+    }
+  }
+  return trimmed;
+}
+
+function isValidClassCode(code) {
+  return /^\d+[a-z][HR]$/.test(code);
+}
+
+// --- JWT AUTHENTICATION MIDDLEWARES ---
+function generateToken(user) {
+  return jwt.sign(
+    {
+      username: user.username,
+      name: user.name || user.username,
+      role: user.role,
+      assignedClass: user.assignedClass || ""
+    },
+    JWT_SECRET,
+    { expiresIn: JWT_EXPIRES_IN }
+  );
+}
+
+function extractToken(req) {
+  const authHeader = req.headers["authorization"];
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    return authHeader.substring(7).trim();
+  }
+  return null;
+}
+
+// Middleware: optionally attach user from token if present
+function parseUser(req, res, next) {
+  const token = extractToken(req);
+  if (!token) {
+    req.user = null;
+    return next();
+  }
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+    if (err) {
+      req.user = null;
+    } else {
+      req.user = decoded;
+    }
+    next();
+  });
+}
+
+// Middleware: require valid token
+function requireAuth(req, res, next) {
+  const token = extractToken(req);
+  if (!token) {
+    return res.status(401).json({ error: "Authentifizierung erforderlich. Bitte melde dich an." });
+  }
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(401).json({ error: "Sitzung ist abgelaufen oder ungültig. Bitte erneut anmelden." });
+    }
+    req.user = decoded;
+    next();
+  });
+}
+
+// Middleware: require admin role
+function requireAdmin(req, res, next) {
+  requireAuth(req, res, () => {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Zugriff verweigert. Administrator-Rechte erforderlich." });
+    }
+    next();
+  });
+}
+
+// --- HEALTH CHECK ---
+app.get("/api/health", (req, res) => {
+  res.json({
+    status: "ok",
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString()
+  });
+});
+
+// --- AUTH ENDPOINTS ---
+app.post("/api/auth/login", loginLimiter, (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) {
+    return res.status(400).json({ error: "Benutzername und Passwort sind erforderlich." });
+  }
+
+  const users = readData(USERS_FILE, defaultUsers);
+  const user = users.find(
+    (u) => u.username.toLowerCase() === username.trim().toLowerCase()
+  );
+
+  if (!user || !verifyPassword(password, user.passwordHash || user.password)) {
+    return res.status(401).json({ error: "Ungültige Anmeldedaten. Bitte überprüfe Benutzername und Passwort." });
+  }
+
+  // If user still had legacy unhashed password, upgrade now
+  if (!user.passwordHash) {
+    user.passwordHash = hashPassword(password);
+    writeData(USERS_FILE, users);
+  }
+
+  const token = generateToken(user);
+
+  return res.json({
+    success: true,
+    user: {
+      username: user.username,
+      name: user.name || user.username,
+      role: user.role, // 'schueler' | 'lehrer' | 'admin'
+      assignedClass: user.assignedClass || ""
+    },
+    token
+  });
+});
+
+app.get("/api/auth/me", requireAuth, (req, res) => {
+  res.json({
+    success: true,
+    user: req.user
+  });
+});
+
+// --- SUBSTITUTIONS (FOR CLIENT APP & WEB) ---
+app.get("/api/substitutions", parseUser, (req, res) => {
+  const allEntries = readData(SUBS_FILE, defaultSubstitutions);
+  let classFilter = (req.query.class || "").trim();
+  const teacherFilter = (req.query.teacher || "").trim();
+
+  // STRICT ACCESS CONTROL:
+  // If the logged-in user is a student ('schueler'), they can ONLY see substitutions for their assigned class!
+  if (req.user && req.user.role === "schueler") {
+    if (req.user.assignedClass) {
+      classFilter = req.user.assignedClass;
+    }
+  }
+
+  let filtered = allEntries;
+  if (classFilter) {
+    const normalized = normalizeClassCode(classFilter);
+    filtered = filtered.filter(
+      (entry) =>
+        entry.className.toLowerCase() === normalized.toLowerCase() ||
+        entry.className.toLowerCase() === classFilter.toLowerCase()
+    );
+  }
+  if (teacherFilter) {
+    filtered = filtered.filter(
+      (entry) =>
+        entry.vertrVon?.toLowerCase() === teacherFilter.toLowerCase() ||
+        entry.nach?.toLowerCase() === teacherFilter.toLowerCase()
+    );
+  }
+
+  res.json({
+    updatedAt: Date.now(),
+    entries: filtered
+  });
+});
+
+app.get("/api/classes", (req, res) => {
+  const allEntries = readData(SUBS_FILE, defaultSubstitutions);
+  const users = readData(USERS_FILE, defaultUsers);
+
+  const classes = new Set();
+  allEntries.forEach((e) => {
+    if (e.className) classes.add(normalizeClassCode(e.className));
+  });
+  users.forEach((u) => {
+    if (u.assignedClass) classes.add(normalizeClassCode(u.assignedClass));
+  });
+
+  res.json(Array.from(classes).filter(Boolean).sort());
+});
+
+// --- ADMIN USER MANAGEMENT (PROTECTED) ---
+app.get("/api/admin/users", requireAdmin, (req, res) => {
+  const users = readData(USERS_FILE, defaultUsers);
+  res.json(
+    users.map((u) => ({
+      username: u.username,
+      name: u.name || u.username,
+      role: u.role,
+      assignedClass: u.assignedClass || "",
+      initialPassword: u.initialPassword || "••••••••"
+    }))
+  );
+});
+
+app.post("/api/admin/users", requireAdmin, (req, res) => {
+  const { username, password, role, name, assignedClass } = req.body;
+  if (!username || !password || !role) {
+    return res.status(400).json({ error: "Benutzername, Passwort und Rolle sind erforderlich." });
+  }
+
+  const cleanRole = role.toLowerCase().trim();
+  if (!["schueler", "lehrer", "admin"].includes(cleanRole)) {
+    return res.status(400).json({ error: "Ungültige Rolle. Erlaubt: schueler, lehrer, admin" });
+  }
+
+  let cleanClass = "";
+  if (cleanRole === "schueler") {
+    if (!assignedClass) {
+      return res.status(400).json({ error: "Für Schüler muss eine Klasse (z. B. 9aR) angegeben werden." });
+    }
+    cleanClass = normalizeClassCode(assignedClass);
+    if (!isValidClassCode(cleanClass)) {
+      return res.status(400).json({
+        error: `Ungültiges Klassenkürzel "${assignedClass}". Format: [Klassenstufe][a/b/c...][H/R], z. B. 9aR, 8bH.`
+      });
+    }
+  } else if (assignedClass) {
+    cleanClass = normalizeClassCode(assignedClass);
+  }
+
+  const users = readData(USERS_FILE, defaultUsers);
+  if (users.some((u) => u.username.toLowerCase() === username.trim().toLowerCase())) {
+    return res.status(400).json({ error: `Der Benutzername "${username}" existiert bereits.` });
+  }
+
+  const newUser = {
+    username: username.trim(),
+    passwordHash: hashPassword(password.trim()),
+    initialPassword: password.trim(), // Stored for admin credential handout/export
+    role: cleanRole,
+    name: name ? name.trim() : username.trim(),
+    assignedClass: cleanClass
+  };
+
+  users.push(newUser);
+  writeData(USERS_FILE, users);
+
+  res.status(201).json({
+    success: true,
+    user: {
+      username: newUser.username,
+      name: newUser.name,
+      role: newUser.role,
+      assignedClass: newUser.assignedClass,
+      initialPassword: newUser.initialPassword
+    }
+  });
+});
+
+app.put("/api/admin/users/:username", requireAdmin, (req, res) => {
+  const usernameParam = req.params.username.toLowerCase();
+  const { password, role, name, assignedClass } = req.body;
+
+  const users = readData(USERS_FILE, defaultUsers);
+  const userIdx = users.findIndex((u) => u.username.toLowerCase() === usernameParam);
+
+  if (userIdx === -1) {
+    return res.status(404).json({ error: "Benutzer nicht gefunden." });
+  }
+
+  if (password) {
+    users[userIdx].passwordHash = hashPassword(password.trim());
+    users[userIdx].initialPassword = password.trim();
+  }
+  if (name) users[userIdx].name = name.trim();
+  if (role) {
+    const cleanRole = role.toLowerCase().trim();
+    if (["schueler", "lehrer", "admin"].includes(cleanRole)) {
+      users[userIdx].role = cleanRole;
+    }
+  }
+  if (assignedClass !== undefined) {
+    const cleanClass = normalizeClassCode(assignedClass);
+    if (users[userIdx].role === "schueler" && cleanClass && !isValidClassCode(cleanClass)) {
+      return res.status(400).json({
+        error: `Ungültiges Klassenkürzel "${assignedClass}". Format: z. B. 9aR, 8bH.`
+      });
+    }
+    users[userIdx].assignedClass = cleanClass;
+  }
+
+  writeData(USERS_FILE, users);
+  res.json({
+    success: true,
+    user: {
+      username: users[userIdx].username,
+      name: users[userIdx].name,
+      role: users[userIdx].role,
+      assignedClass: users[userIdx].assignedClass,
+      initialPassword: users[userIdx].initialPassword
+    }
+  });
+});
+
+app.delete("/api/admin/users/:username", requireAdmin, (req, res) => {
+  const usernameParam = req.params.username.toLowerCase();
+  let users = readData(USERS_FILE, defaultUsers);
+
+  if (usernameParam === "admin") {
+    return res.status(400).json({ error: "Der Standard-Administrator kann nicht gelöscht werden." });
+  }
+
+  const initialLength = users.length;
+  users = users.filter((u) => u.username.toLowerCase() !== usernameParam);
+
+  if (users.length === initialLength) {
+    return res.status(404).json({ error: "Benutzer nicht gefunden." });
+  }
+
+  writeData(USERS_FILE, users);
+  res.json({ success: true, message: "Benutzer erfolgreich gelöscht." });
+});
+
+// --- ADMIN SUBSTITUTION MANAGEMENT (PROTECTED) ---
+app.post("/api/admin/substitutions", requireAdmin, (req, res) => {
+  const { day, className, lesson, subject, art, room, vertrVon, nach, text } = req.body;
+
+  if (!day || !className || !lesson || !subject) {
+    return res.status(400).json({ error: "Tag, Klasse, Stunde und Fach sind Pflichtfelder." });
+  }
+
+  const cleanClass = normalizeClassCode(className);
+  const subs = readData(SUBS_FILE, defaultSubstitutions);
+
+  const newEntry = {
+    id: `sub-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    day: day.trim(),
+    className: cleanClass,
+    lesson: lesson.trim(),
+    subject: subject.trim(),
+    art: (art || "Vertretung").trim(),
+    room: (room || "---").trim(),
+    vertrVon: (vertrVon || "").trim(),
+    nach: (nach || "").trim(),
+    text: (text || "").trim()
+  };
+
+  subs.unshift(newEntry);
+  writeData(SUBS_FILE, subs);
+
+  res.status(201).json({ success: true, entry: newEntry });
+});
+
+app.delete("/api/admin/substitutions/:id", requireAdmin, (req, res) => {
+  const id = req.params.id;
+  let subs = readData(SUBS_FILE, defaultSubstitutions);
+
+  const initialLength = subs.length;
+  subs = subs.filter((s) => s.id !== id);
+
+  if (subs.length === initialLength) {
+    return res.status(404).json({ error: "Eintrag nicht gefunden." });
+  }
+
+  writeData(SUBS_FILE, subs);
+  res.json({ success: true, message: "Eintrag gelöscht." });
+});
+
+app.post("/api/admin/substitutions/clear", requireAdmin, (req, res) => {
+  writeData(SUBS_FILE, []);
+  res.json({ success: true, message: "Alle Vertretungen gelöscht." });
+});
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`====================================================`);
+  console.log(`  Velo.Schulplaner Modern & Secure Server running!`);
+  console.log(`  Web Admin: http://localhost:${PORT}`);
+  console.log(`  API:       http://localhost:${PORT}/api`);
+  console.log(`  Health:    http://localhost:${PORT}/api/health`);
+  console.log(`====================================================`);
+});

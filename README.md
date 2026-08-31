@@ -1,8 +1,8 @@
 <div align="center">
 
-# Astra ✨
+# Velo.Schulplaner 🎒
 
-**Material You Expressive alternative for DSBmobile**
+**Material You Expressive Schul- & Vertretungsplaner für die Merianschule Seligenstadt**
 
 <img src="assets/icon.png" alt="App Icon" width="128"/>
 
@@ -15,12 +15,9 @@
 
 </div>
 
-A modern, native **Material You Expressive** replacement for the official
-**DSBmobile** app. It shows your school's daily substitution plan in a clean,
-fast and fully customizable interface.
+Ein moderner, nativer **Material You Expressive** Vertretungs- und Schulplaner für die **Merianschule Seligenstadt** (basierend auf DSBmobile).
 
-The official DSBmobile app hasn't been updated in two years and isn't native at
-all. Astra is built from scratch with **Kotlin** and **Jetpack Compose**.
+Velo.Schulplaner ist von Grund auf mit **Kotlin** und **Jetpack Compose** entwickelt.
 
 ---
 
