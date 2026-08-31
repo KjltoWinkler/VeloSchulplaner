@@ -333,45 +333,6 @@
       --md-fab-container-padding-horizontal: 20px;
     }
 
-    /* "+ Neu" DROPDOWN MENU */
-    .new-dropdown-menu {
-      position: absolute;
-      top: 64px;
-      left: 0;
-      width: 220px;
-      background: var(--md-sys-color-surface-container-highest);
-      border-radius: 12px;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-      padding: 6px 0;
-      display: none;
-      z-index: 1000;
-      border: 1px solid var(--md-sys-color-outline-variant);
-    }
-
-    .new-dropdown-menu.show {
-      display: block;
-    }
-
-    .menu-item {
-      padding: 10px 16px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-size: 0.9rem;
-      cursor: pointer;
-      color: var(--md-sys-color-on-surface);
-      transition: background 0.15s;
-    }
-
-    .menu-item:hover {
-      background: var(--md-sys-color-surface-container-high);
-    }
-
-    .menu-divider {
-      height: 1px;
-      background: var(--md-sys-color-outline-variant);
-      margin: 4px 0;
-    }
 
     /* NAVIGATION ITEMS */
     .nav-list {
@@ -703,26 +664,26 @@
       <!-- LEFT SIDEBAR -->
       <aside class="drive-sidebar">
         
-        <!-- "+ Neu" BUTTON WITH DROPDOWN -->
-        <div class="new-btn-container">
+        <!-- "+ Neu" BUTTON WITH MATERIAL WEB MENU -->
+        <div class="new-btn-container" style="position: relative;">
           <md-fab variant="primary" label="Neu" id="driveNewBtn" class="drive-fab-btn">
             <span slot="icon" class="material-symbols-outlined">add</span>
           </md-fab>
-          <div class="new-dropdown-menu" id="newDropdownMenu">
-            <div class="menu-item" id="menuAddUser">
-              <span class="material-symbols-outlined" style="color:var(--md-sys-color-primary);">person_add</span>
-              Neuer Benutzer
-            </div>
-            <div class="menu-item" id="menuAddSub">
-              <span class="material-symbols-outlined" style="color:#81c995;">event_note</span>
-              Neuer Vertretungsplan
-            </div>
-            <div class="menu-divider"></div>
-            <div class="menu-item" id="menuTestClass">
-              <span class="material-symbols-outlined" style="color:#fdd663;">check_circle</span>
-              Klassenkürzel prüfen
-            </div>
-          </div>
+          <md-menu id="newMenu" anchor="driveNewBtn">
+            <md-menu-item id="menuAddUser">
+              <span slot="start" class="material-symbols-outlined" style="color:var(--md-sys-color-primary);">person_add</span>
+              <div slot="headline">Neuer Benutzer</div>
+            </md-menu-item>
+            <md-menu-item id="menuAddSub">
+              <span slot="start" class="material-symbols-outlined" style="color:#81c995;">event_note</span>
+              <div slot="headline">Neuer Vertretungsplan</div>
+            </md-menu-item>
+            <md-divider></md-divider>
+            <md-menu-item id="menuTestClass">
+              <span slot="start" class="material-symbols-outlined" style="color:#fdd663;">check_circle</span>
+              <div slot="headline">Klassenkürzel prüfen</div>
+            </md-menu-item>
+          </md-menu>
         </div>
 
         <!-- NAVIGATION ITEMS -->
@@ -1127,17 +1088,12 @@
       });
     });
 
-    // "+ Neu" Dropdown
+    // "+ Neu" Menu (Material Web md-menu)
     const newBtn = document.getElementById('driveNewBtn');
-    const newMenu = document.getElementById('newDropdownMenu');
+    const newMenu = document.getElementById('newMenu');
 
-    newBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      newMenu.classList.toggle('show');
-    });
-
-    document.addEventListener('click', () => {
-      newMenu.classList.remove('show');
+    newBtn.addEventListener('click', () => {
+      newMenu.open = !newMenu.open;
     });
 
     // Dialogs
