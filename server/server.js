@@ -179,44 +179,44 @@ const defaultClasses = [
 const defaultTimetables = {
   "9aR": {
     "Montag": {
-      "1": { subject: "Mathematik", teacher: "MÜL", room: "R102" },
-      "2": { subject: "Mathematik", teacher: "MÜL", room: "R102" },
-      "3": { subject: "Deutsch", teacher: "WEI", room: "R102" },
-      "4": { subject: "Deutsch", teacher: "WEI", room: "R102" },
-      "5": { subject: "Physik", teacher: "BEC", room: "PHY" },
-      "6": { subject: "Englisch", teacher: "SCH", room: "R102" }
+      "2": { subject: "AL", teacher: "", room: "" },
+      "3": { subject: "Englisch", teacher: "", room: "" },
+      "4": { subject: "Biologie", teacher: "", room: "" },
+      "5": { subject: "Mathe", teacher: "", room: "" },
+      "6": { subject: "Mathe", teacher: "", room: "" }
     },
     "Dienstag": {
-      "1": { subject: "Englisch", teacher: "SCH", room: "R102" },
-      "2": { subject: "Englisch", teacher: "SCH", room: "R102" },
-      "3": { subject: "Sport", teacher: "KLE", room: "TH1" },
-      "4": { subject: "Sport", teacher: "KLE", room: "TH1" },
-      "5": { subject: "Geschichte", teacher: "MÜL", room: "R102" },
-      "6": { subject: "Biologie", teacher: "KLE", room: "BIO" }
+      "2": { subject: "Ethik", teacher: "", room: "" },
+      "3": { subject: "Deutsch", teacher: "", room: "" },
+      "4": { subject: "Deutsch", teacher: "", room: "" },
+      "5": { subject: "Englisch", teacher: "", room: "" },
+      "6": { subject: "AL", teacher: "", room: "" },
+      "7": { subject: "Sport", teacher: "", room: "" },
+      "8": { subject: "Sport", teacher: "", room: "" }
     },
     "Mittwoch": {
-      "1": { subject: "Deutsch", teacher: "WEI", room: "R102" },
-      "2": { subject: "Mathematik", teacher: "MÜL", room: "R102" },
-      "3": { subject: "Erdkunde", teacher: "WEB", room: "R102" },
-      "4": { subject: "Chemie", teacher: "BEC", room: "CH" },
-      "5": { subject: "Kunst", teacher: "GRA", room: "KUN" },
-      "6": { subject: "Kunst", teacher: "GRA", room: "KUN" }
+      "2": { subject: "Geschichte", teacher: "", room: "" },
+      "3": { subject: "Deutsch", teacher: "", room: "" },
+      "4": { subject: "Chemie", teacher: "", room: "" },
+      "5": { subject: "Englisch", teacher: "", room: "" },
+      "6": { subject: "Mathe", teacher: "", room: "" },
+      "7": { subject: "WPU", teacher: "", room: "" },
+      "8": { subject: "WPU", teacher: "", room: "" }
     },
     "Donnerstag": {
-      "1": { subject: "Physik", teacher: "BEC", room: "PHY" },
-      "2": { subject: "Chemie", teacher: "BEC", room: "CH" },
-      "3": { subject: "Mathematik", teacher: "MÜL", room: "R102" },
-      "4": { subject: "Englisch", teacher: "SCH", room: "R102" },
-      "5": { subject: "Musik", teacher: "WAG", room: "MUS" },
-      "6": { subject: "Musik", teacher: "WAG", room: "MUS" }
+      "2": { subject: "Biologie", teacher: "", room: "" },
+      "3": { subject: "Erdkunde", teacher: "", room: "" },
+      "4": { subject: "Deutsch", teacher: "", room: "" },
+      "5": { subject: "KL", teacher: "", room: "" },
+      "6": { subject: "Geschichte", teacher: "", room: "" }
     },
     "Freitag": {
-      "1": { subject: "Deutsch", teacher: "WEI", room: "R102" },
-      "2": { subject: "Deutsch", teacher: "WEI", room: "R102" },
-      "3": { subject: "Englisch", teacher: "SCH", room: "R102" },
-      "4": { subject: "Mathematik", teacher: "MÜL", room: "R102" },
-      "5": { subject: "Religion/Ethik", teacher: "BAU", room: "R102" },
-      "6": { subject: "Klassenstunde", teacher: "MÜL", room: "R102" }
+      "1": { subject: "PoWi", teacher: "", room: "" },
+      "2": { subject: "Chemie", teacher: "", room: "" },
+      "3": { subject: "Mathe", teacher: "", room: "" },
+      "4": { subject: "Ethik", teacher: "", room: "" },
+      "5": { subject: "Kunst", teacher: "", room: "" },
+      "6": { subject: "Kunst", teacher: "", room: "" }
     }
   }
 };
