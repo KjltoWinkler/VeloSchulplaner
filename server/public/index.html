@@ -605,10 +605,10 @@
           <span slot="leading-icon" class="material-symbols-outlined">lock</span>
         </md-outlined-text-field>
 
-        <md-filled-button id="loginSubmitBtn" style="height:48px; margin-top:8px;">
-          <span slot="icon" class="material-symbols-outlined">login</span>
+        <md-filled-tonal-button id="loginSubmitBtn" style="height:48px; margin-top:8px;">
           Anmelden
-        </md-filled-button>
+          <span slot="icon" class="material-symbols-outlined">login</span>
+        </md-filled-tonal-button>
       </form>
     </div>
   </div>
@@ -734,10 +734,10 @@
               <span class="material-symbols-outlined" style="color:var(--md-sys-color-primary);">group</span>
               Benutzerverwaltung
             </div>
-            <md-filled-button id="canvasAddUserBtn">
-              <span slot="icon" class="material-symbols-outlined">person_add</span>
+            <md-filled-tonal-button id="canvasAddUserBtn">
               Benutzer anlegen
-            </md-filled-button>
+              <span slot="icon" class="material-symbols-outlined">person_add</span>
+            </md-filled-tonal-button>
           </div>
 
           <!-- DRIVE FILTER CHIPS (M3 MD-CHIP-SET) -->
@@ -782,10 +782,10 @@
               <span class="material-symbols-outlined" style="color:#81c995;">event_note</span>
               Vertretungspläne
             </div>
-            <md-filled-button id="canvasAddSubBtn">
-              <span slot="icon" class="material-symbols-outlined">add</span>
+            <md-filled-tonal-button id="canvasAddSubBtn">
               Eintrag hinzufügen
-            </md-filled-button>
+              <span slot="icon" class="material-symbols-outlined">add</span>
+            </md-filled-tonal-button>
           </div>
 
           <div class="drive-chips-row">
@@ -889,7 +889,10 @@
     </form>
     <div slot="actions">
       <md-text-button form="addUserForm" value="cancel" id="closeAddUserModal">Abbrechen</md-text-button>
-      <md-filled-button id="submitAddUserBtn">Erstellen</md-filled-button>
+      <md-filled-tonal-button id="submitAddUserBtn">
+        Erstellen
+        <span slot="icon" class="material-symbols-outlined">check</span>
+      </md-filled-tonal-button>
     </div>
   </md-dialog>
 
@@ -924,7 +927,10 @@
     </form>
     <div slot="actions">
       <md-text-button form="addSubForm" value="cancel" id="closeAddSubModal">Abbrechen</md-text-button>
-      <md-filled-button id="submitAddSubBtn">Speichern</md-filled-button>
+      <md-filled-tonal-button id="submitAddSubBtn">
+        Speichern
+        <span slot="icon" class="material-symbols-outlined">save</span>
+      </md-filled-tonal-button>
     </div>
   </md-dialog>
 
@@ -941,9 +947,10 @@
     </form>
     <div slot="actions">
       <md-text-button id="confirmDeleteCancelBtn">Abbrechen</md-text-button>
-      <md-filled-button id="confirmDeleteConfirmBtn" style="--md-sys-color-primary: var(--md-sys-color-error); --md-sys-color-on-primary: #fff;">
+      <md-filled-tonal-button id="confirmDeleteConfirmBtn" style="--md-sys-color-secondary-container: var(--md-sys-color-error-container); --md-sys-color-on-secondary-container: var(--md-sys-color-on-error-container);">
         Löschen
-      </md-filled-button>
+        <span slot="icon" class="material-symbols-outlined">delete</span>
+      </md-filled-tonal-button>
     </div>
   </md-dialog>
 
