@@ -504,8 +504,8 @@ function renderClasses() {
       <td><strong>${c.studentCount || 0}</strong> Schüler</td>
       <td>
         <div class="row-actions">
-          <md-outlined-button class="btn-open-timetable" data-code="${c.code}" style="height:32px; font-size:0.8rem;" title="Stundenplan dieser Klasse öffnen">
-            <span slot="icon" class="material-symbols-outlined" style="font-size:16px;">schedule</span>
+          <md-outlined-button class="btn-open-timetable" data-code="${c.code}" title="Stundenplan dieser Klasse öffnen">
+            <span slot="icon" class="material-symbols-outlined">schedule</span>
             Stundenplan
           </md-outlined-button>
           <md-icon-button class="btn-edit-class" data-code="${c.code}" title="Klasse bearbeiten">

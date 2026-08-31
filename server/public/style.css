@@ -54,7 +54,18 @@
   }
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body, h1, h2, h3, h4, h5, h6, p, ul, ol, figure, blockquote, dl, dd {
+  margin: 0;
+  padding: 0;
+}
+
+ul, ol {
+  list-style: none;
+}
 
 body {
   font-family: var(--md-ref-typeface-plain);
@@ -665,7 +676,7 @@ table.drive-table tr:hover td {
   z-index: 20000;
 }
 
-/* MATERIAL 3 BUTTONS (MATCHING GOOGLE M3 1:1) */
+/* MATERIAL 3 BUTTONS (LARGE, SPACIOUS, SPEC-COMPLIANT 1:1) */
 md-filled-button,
 md-filled-tonal-button,
 md-outlined-button,
@@ -673,18 +684,45 @@ md-elevated-button,
 md-text-button {
   font-family: var(--md-ref-typeface-plain);
   font-weight: 500;
-  font-size: 0.875rem;
+  font-size: 0.92rem;
   letter-spacing: 0.15px;
+  padding: initial; /* Ensure browser reset never clips custom element padding */
+  white-space: nowrap;
+
   --md-filled-button-container-shape: 9999px;
   --md-filled-tonal-button-container-shape: 9999px;
   --md-outlined-button-container-shape: 9999px;
   --md-elevated-button-container-shape: 9999px;
   --md-text-button-container-shape: 9999px;
-  --md-filled-button-container-height: 40px;
-  --md-filled-tonal-button-container-height: 40px;
-  --md-outlined-button-container-height: 40px;
-  --md-elevated-button-container-height: 40px;
-  --md-text-button-container-height: 40px;
+
+  /* Generous height: 44px default */
+  --md-filled-button-container-height: 44px;
+  --md-filled-tonal-button-container-height: 44px;
+  --md-outlined-button-container-height: 44px;
+  --md-elevated-button-container-height: 44px;
+  --md-text-button-container-height: 44px;
+
+  /* Generous horizontal padding so text never overflows */
+  --md-filled-button-leading-space: 24px;
+  --md-filled-button-trailing-space: 24px;
+  --md-filled-button-with-leading-icon-leading-space: 18px;
+  --md-filled-button-with-leading-icon-trailing-space: 24px;
+
+  --md-filled-tonal-button-leading-space: 24px;
+  --md-filled-tonal-button-trailing-space: 24px;
+  --md-filled-tonal-button-with-leading-icon-leading-space: 18px;
+  --md-filled-tonal-button-with-leading-icon-trailing-space: 24px;
+
+  --md-outlined-button-leading-space: 24px;
+  --md-outlined-button-trailing-space: 24px;
+  --md-outlined-button-with-leading-icon-leading-space: 18px;
+  --md-outlined-button-with-leading-icon-trailing-space: 24px;
+
+  --md-text-button-leading-space: 16px;
+  --md-text-button-trailing-space: 16px;
+  --md-text-button-with-leading-icon-leading-space: 14px;
+  --md-text-button-with-leading-icon-trailing-space: 18px;
+
   transition: transform 0.1s ease, box-shadow 0.15s ease, background-color 0.15s ease;
 }
 
@@ -710,8 +748,24 @@ md-filled-tonal-button .material-symbols-outlined,
 md-outlined-button .material-symbols-outlined,
 md-elevated-button .material-symbols-outlined,
 md-text-button .material-symbols-outlined {
-  font-size: 18px !important;
+  font-size: 20px !important;
   line-height: 1;
+}
+
+/* Specific button styles */
+.canvas-header md-filled-button {
+  --md-filled-button-container-height: 44px;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.btn-open-timetable {
+  --md-outlined-button-container-height: 38px;
+  --md-outlined-button-leading-space: 18px;
+  --md-outlined-button-trailing-space: 18px;
+  --md-outlined-button-with-leading-icon-leading-space: 14px;
+  --md-outlined-button-with-leading-icon-trailing-space: 18px;
+  font-size: 0.88rem;
 }
 
 /* TIMETABLE WEEKLY GRID (M3 STYLE) */
