@@ -46,10 +46,10 @@
           <span slot="leading-icon" class="material-symbols-outlined">lock</span>
         </md-outlined-text-field>
 
-        <md-filled-tonal-button id="loginSubmitBtn" style="height:48px; margin-top:8px;">
+        <md-filled-button id="loginSubmitBtn" style="height:40px; margin-top:8px;">
           Anmelden
           <span slot="icon" class="material-symbols-outlined">login</span>
-        </md-filled-tonal-button>
+        </md-filled-button>
       </form>
     </div>
   </div>
@@ -174,10 +174,10 @@
               <span class="material-symbols-outlined" style="color:var(--md-sys-color-primary);">group</span>
               Benutzerverwaltung
             </div>
-            <md-filled-tonal-button id="canvasAddUserBtn">
+            <md-filled-button id="canvasAddUserBtn">
               Benutzer anlegen
               <span slot="icon" class="material-symbols-outlined">person_add</span>
-            </md-filled-tonal-button>
+            </md-filled-button>
           </div>
 
           <!-- DRIVE FILTER CHIPS (M3 MD-CHIP-SET) -->
@@ -222,10 +222,10 @@
               <span class="material-symbols-outlined" style="color:#81c995;">event_note</span>
               Vertretungspläne
             </div>
-            <md-filled-tonal-button id="canvasAddSubBtn">
+            <md-filled-button id="canvasAddSubBtn">
               Eintrag hinzufügen
               <span slot="icon" class="material-symbols-outlined">add</span>
-            </md-filled-tonal-button>
+            </md-filled-button>
           </div>
 
           <div class="drive-chips-row">
@@ -266,10 +266,10 @@
               <span class="material-symbols-outlined" style="color:var(--md-sys-color-primary);">label</span>
               Klassenverwaltung
             </div>
-            <md-filled-tonal-button id="canvasAddClassBtn">
+            <md-filled-button id="canvasAddClassBtn">
               Klasse anlegen
               <span slot="icon" class="material-symbols-outlined">add</span>
-            </md-filled-tonal-button>
+            </md-filled-button>
           </div>
 
           <div class="drive-table-container" style="margin-bottom: 24px;">
@@ -323,10 +323,10 @@
               <md-outlined-select id="timetableClassSelect" label="Klasse wählen" style="min-width:180px;">
                 <!-- Filled dynamically with classes -->
               </md-outlined-select>
-              <md-text-button id="clearTimetableBtn" style="color:var(--md-sys-color-error);">
+              <md-outlined-button id="clearTimetableBtn" style="--md-outlined-button-outline-color: rgba(242, 184, 181, 0.4); --md-outlined-button-label-text-color: var(--md-sys-color-error);">
                 <span slot="icon" class="material-symbols-outlined">delete_sweep</span>
                 Plan leeren
-              </md-text-button>
+              </md-outlined-button>
             </div>
           </div>
 
@@ -374,10 +374,10 @@
           </div>
         </div>
         <div>
-          <md-filled-tonal-button id="studentLogoutBtn">
+          <md-outlined-button id="studentLogoutBtn">
             <span slot="icon" class="material-symbols-outlined">logout</span>
             Abmelden
-          </md-filled-tonal-button>
+          </md-outlined-button>
         </div>
       </div>
 
@@ -421,7 +421,7 @@
         <div style="display:flex; gap:12px; align-items:flex-start;">
           <md-outlined-text-field id="inputPassword" label="Festes Passwort *" required style="flex:1;">
           </md-outlined-text-field>
-          <md-filled-tonal-button type="button" id="btnGenPassword" style="margin-top:2px; height:54px;" title="Zufälliges Passwort generieren">
+          <md-filled-tonal-button type="button" id="btnGenPassword" style="height:40px; align-self:center;" title="Zufälliges Passwort generieren">
             <span slot="icon" class="material-symbols-outlined">casino</span>
           </md-filled-tonal-button>
         </div>
@@ -443,11 +443,11 @@
         <div id="userModalError" style="color:var(--md-sys-color-error); font-size:0.85rem; display:none;"></div>
       </form>
       <div class="m3-dialog-actions">
-        <md-text-button id="closeAddUserModal">Abbrechen</md-text-button>
-        <md-filled-tonal-button id="submitAddUserBtn">
+        <md-outlined-button id="closeAddUserModal">Abbrechen</md-outlined-button>
+        <md-filled-button id="submitAddUserBtn">
           Erstellen
           <span slot="icon" class="material-symbols-outlined">check</span>
-        </md-filled-tonal-button>
+        </md-filled-button>
       </div>
     </div>
   </div>
@@ -469,7 +469,7 @@
         <div style="display:flex; gap:12px; align-items:flex-start;">
           <md-outlined-text-field id="editPassword" label="Neues Passwort (optional)" supporting-text="Leer lassen, um aktuelles Passwort zu behalten" style="flex:1;">
           </md-outlined-text-field>
-          <md-filled-tonal-button type="button" id="btnGenEditPassword" style="margin-top:2px; height:54px;" title="Zufälliges Passwort generieren">
+          <md-filled-tonal-button type="button" id="btnGenEditPassword" style="height:40px; align-self:center;" title="Zufälliges Passwort generieren">
             <span slot="icon" class="material-symbols-outlined">casino</span>
           </md-filled-tonal-button>
         </div>
@@ -488,11 +488,11 @@
         <div id="editUserModalError" style="color:var(--md-sys-color-error); font-size:0.85rem; display:none;"></div>
       </form>
       <div class="m3-dialog-actions">
-        <md-text-button id="closeEditUserModal">Abbrechen</md-text-button>
-        <md-filled-tonal-button id="submitEditUserBtn">
+        <md-outlined-button id="closeEditUserModal">Abbrechen</md-outlined-button>
+        <md-filled-button id="submitEditUserBtn">
           Speichern
           <span slot="icon" class="material-symbols-outlined">save</span>
-        </md-filled-tonal-button>
+        </md-filled-button>
       </div>
     </div>
   </div>
@@ -528,11 +528,11 @@
         <div id="subModalError" style="color:var(--md-sys-color-error); font-size:0.85rem; display:none;"></div>
       </form>
       <div class="m3-dialog-actions">
-        <md-text-button id="closeAddSubModal">Abbrechen</md-text-button>
-        <md-filled-tonal-button id="submitAddSubBtn">
+        <md-outlined-button id="closeAddSubModal">Abbrechen</md-outlined-button>
+        <md-filled-button id="submitAddSubBtn">
           Speichern
           <span slot="icon" class="material-symbols-outlined">save</span>
-        </md-filled-tonal-button>
+        </md-filled-button>
       </div>
     </div>
   </div>
@@ -548,11 +548,11 @@
         Möchtest du diesen Eintrag wirklich löschen?
       </p>
       <div class="m3-dialog-actions">
-        <md-text-button id="confirmDeleteCancelBtn">Abbrechen</md-text-button>
-        <md-filled-tonal-button id="confirmDeleteConfirmBtn" style="--md-sys-color-secondary-container: var(--md-sys-color-error-container); --md-sys-color-on-secondary-container: var(--md-sys-color-on-error-container);">
+        <md-outlined-button id="confirmDeleteCancelBtn">Abbrechen</md-outlined-button>
+        <md-filled-button id="confirmDeleteConfirmBtn" style="--md-filled-button-container-color: var(--md-sys-color-error); --md-filled-button-label-text-color: #601410;">
           Löschen
           <span slot="icon" class="material-symbols-outlined">delete</span>
-        </md-filled-tonal-button>
+        </md-filled-button>
       </div>
     </div>
   </div>
@@ -584,11 +584,11 @@
         <div id="classModalError" style="color:var(--md-sys-color-error); font-size:0.85rem; display:none;"></div>
       </form>
       <div class="m3-dialog-actions">
-        <md-text-button id="closeClassModal">Abbrechen</md-text-button>
-        <md-filled-tonal-button id="submitClassBtn">
+        <md-outlined-button id="closeClassModal">Abbrechen</md-outlined-button>
+        <md-filled-button id="submitClassBtn">
           Speichern
           <span slot="icon" class="material-symbols-outlined">save</span>
-        </md-filled-tonal-button>
+        </md-filled-button>
       </div>
     </div>
   </div>
@@ -613,11 +613,11 @@
           <span slot="icon" class="material-symbols-outlined">delete</span>
           Leeren
         </md-text-button>
-        <md-text-button id="closeLessonModal">Abbrechen</md-text-button>
-        <md-filled-tonal-button id="submitLessonBtn">
+        <md-outlined-button id="closeLessonModal">Abbrechen</md-outlined-button>
+        <md-filled-button id="submitLessonBtn">
           Übernehmen
           <span slot="icon" class="material-symbols-outlined">check</span>
-        </md-filled-tonal-button>
+        </md-filled-button>
       </div>
     </div>
   </div>

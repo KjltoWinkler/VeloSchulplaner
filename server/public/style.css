@@ -20,6 +20,7 @@
   --md-sys-color-on-error-container: #f9dedc;
   --md-ref-typeface-brand: 'Google Sans', 'Roboto', sans-serif;
   --md-ref-typeface-plain: 'Google Sans Text', 'Roboto', sans-serif;
+  --md-sys-shape-corner-full: 9999px;
 
   --drive-bg: #1b1b1b;
   --drive-canvas-bg: #131314;
@@ -662,6 +663,55 @@ table.drive-table tr:hover td {
   gap: 8px;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
   z-index: 20000;
+}
+
+/* MATERIAL 3 BUTTONS (MATCHING GOOGLE M3 1:1) */
+md-filled-button,
+md-filled-tonal-button,
+md-outlined-button,
+md-elevated-button,
+md-text-button {
+  font-family: var(--md-ref-typeface-plain);
+  font-weight: 500;
+  font-size: 0.875rem;
+  letter-spacing: 0.15px;
+  --md-filled-button-container-shape: 9999px;
+  --md-filled-tonal-button-container-shape: 9999px;
+  --md-outlined-button-container-shape: 9999px;
+  --md-elevated-button-container-shape: 9999px;
+  --md-text-button-container-shape: 9999px;
+  --md-filled-button-container-height: 40px;
+  --md-filled-tonal-button-container-height: 40px;
+  --md-outlined-button-container-height: 40px;
+  --md-elevated-button-container-height: 40px;
+  --md-text-button-container-height: 40px;
+  transition: transform 0.1s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+/* Outlined Button border precision */
+md-outlined-button {
+  --md-outlined-button-outline-width: 1px;
+  --md-outlined-button-outline-color: var(--md-sys-color-outline-variant, #444746);
+  --md-outlined-button-label-text-color: var(--md-sys-color-primary, #a8c7fa);
+}
+
+/* Authentic M3 Text Button with pill hover state (Image 3) */
+md-text-button {
+  border-radius: 9999px;
+}
+
+md-text-button:hover {
+  background-color: var(--md-sys-color-surface-container-high);
+}
+
+/* Icon alignment inside M3 buttons */
+md-filled-button .material-symbols-outlined,
+md-filled-tonal-button .material-symbols-outlined,
+md-outlined-button .material-symbols-outlined,
+md-elevated-button .material-symbols-outlined,
+md-text-button .material-symbols-outlined {
+  font-size: 18px !important;
+  line-height: 1;
 }
 
 /* TIMETABLE WEEKLY GRID (M3 STYLE) */
