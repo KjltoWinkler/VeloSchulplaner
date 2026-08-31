@@ -557,7 +557,8 @@
       z-index: 10000;
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.2s cubic-bezier(0.05, 0.7, 0.1, 1);
+      visibility: hidden;
+      transition: opacity 0.2s linear, visibility 0.2s linear;
       padding: 16px;
       box-sizing: border-box;
     }
@@ -565,6 +566,8 @@
     .m3-modal-overlay.open {
       opacity: 1;
       pointer-events: auto;
+      visibility: visible;
+      transition: opacity 0.25s linear, visibility 0.25s linear;
     }
 
     .m3-dialog-card {
@@ -578,14 +581,23 @@
       overflow-y: auto;
       box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
       border: 1px solid var(--md-sys-color-outline-variant);
-      transform: scale(0.92);
-      transition: transform 0.2s cubic-bezier(0.05, 0.7, 0.1, 1);
       display: flex;
       flex-direction: column;
+
+      /* Material 3 Exit Motion: snappy slide up + fade */
+      opacity: 0;
+      transform: translateY(-40px) scale(0.92);
+      transition: transform 0.18s cubic-bezier(0.3, 0, 0.8, 0.15),
+                  opacity 0.15s linear;
+      will-change: transform, opacity;
     }
 
+    /* Material 3 Enter Motion: smooth slide down from -40px + emphasized easing */
     .m3-modal-overlay.open .m3-dialog-card {
-      transform: scale(1);
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      transition: transform 0.4s cubic-bezier(0.05, 0.7, 0.1, 1),
+                  opacity 0.22s cubic-bezier(0.2, 0, 0, 1);
     }
 
     .m3-dialog-header {
