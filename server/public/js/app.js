@@ -798,6 +798,9 @@ export function initApp() {
       tabStudentSubs.setAttribute('selected', '');
       tabStudentTimetable.removeAttribute('selected');
       studentSubsView.style.display = 'block';
+      studentSubsView.classList.remove('view-entering');
+      void studentSubsView.offsetWidth;
+      studentSubsView.classList.add('view-entering');
       studentTimetableView.style.display = 'none';
     });
 
@@ -806,6 +809,9 @@ export function initApp() {
       tabStudentSubs.removeAttribute('selected');
       studentSubsView.style.display = 'none';
       studentTimetableView.style.display = 'block';
+      studentTimetableView.classList.remove('view-entering');
+      void studentTimetableView.offsetWidth;
+      studentTimetableView.classList.add('view-entering');
     });
   }
 

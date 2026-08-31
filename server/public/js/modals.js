@@ -237,19 +237,21 @@ export function initModals({ onUserSaved, onSubSaved, onClassSaved, onLessonSave
   // --- ADD SUBSTITUTION MODAL ---
   document.getElementById('closeAddSubModal').addEventListener('click', () => subDialog.close());
 
-  document.getElementById('submitAddSubBtn').addEventListener('click', async () => {
-    const day = document.getElementById('inputSubDay').value.trim();
-    const rawClass = document.getElementById('inputSubClass').value.trim();
-    const lesson = document.getElementById('inputSubLesson').value.trim();
-    const subject = document.getElementById('inputSubSubject').value.trim();
-    const art = document.getElementById('inputSubArt').value;
-    const room = document.getElementById('inputSubRoom').value.trim();
-    const vertrVon = document.getElementById('inputSubVertrVon').value.trim();
-    const nach = document.getElementById('inputSubNach').value.trim();
-    const text = document.getElementById('inputSubText').value.trim();
-    const errEl = document.getElementById('subModalError');
+  const submitSubBtn = document.getElementById('submitAddSubBtn');
+  if (submitSubBtn) {
+    submitSubBtn.addEventListener('click', async () => {
+      const day = document.getElementById('inputSubDay')?.value?.trim() || '';
+      const rawClass = document.getElementById('inputSubClass')?.value?.trim() || '';
+      const lesson = document.getElementById('inputSubLesson')?.value?.trim() || '';
+      const subject = document.getElementById('inputSubSubject')?.value?.trim() || '';
+      const art = document.getElementById('inputSubArt')?.value || 'Vertretung';
+      const room = document.getElementById('inputSubRoom')?.value?.trim() || '';
+      const vertrVon = document.getElementById('inputSubVertrVon')?.value?.trim() || '';
+      const nach = document.getElementById('inputSubNach')?.value?.trim() || '';
+      const text = document.getElementById('inputSubText')?.value?.trim() || '';
+      const errEl = document.getElementById('subModalError');
 
-    errEl.style.display = 'none';
+      if (errEl) errEl.style.display = 'none';
 
     if (!day || !rawClass || !lesson || !subject) {
       errEl.textContent = 'Tag, Klasse, Stunde und Fach sind Pflichtfelder.';
@@ -473,15 +475,26 @@ export function openEditUserModal(username, usersList) {
 }
 
 export function openSubModal() {
-  document.getElementById('inputSubDay').value = new Date().toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
-  document.getElementById('inputSubClass').value = '';
-  document.getElementById('inputSubLesson').value = '';
-  document.getElementById('inputSubSubject').value = '';
-  document.getElementById('inputSubRoom').value = '';
-  document.getElementById('inputSubVertrVon').value = '';
-  document.getElementById('inputSubNach').value = '';
-  document.getElementById('inputSubText').value = '';
-  document.getElementById('subModalError').style.display = 'none';
+  const dayEl = document.getElementById('inputSubDay');
+  const classEl = document.getElementById('inputSubClass');
+  const lessonEl = document.getElementById('inputSubLesson');
+  const subjectEl = document.getElementById('inputSubSubject');
+  const roomEl = document.getElementById('inputSubRoom');
+  const vertrVonEl = document.getElementById('inputSubVertrVon');
+  const nachEl = document.getElementById('inputSubNach');
+  const textEl = document.getElementById('inputSubText');
+  const errEl = document.getElementById('subModalError');
+
+  if (dayEl) dayEl.value = new Date().toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+  if (classEl) classEl.value = '';
+  if (lessonEl) lessonEl.value = '';
+  if (subjectEl) subjectEl.value = '';
+  if (roomEl) roomEl.value = '';
+  if (vertrVonEl) vertrVonEl.value = '';
+  if (nachEl) nachEl.value = '';
+  if (textEl) textEl.value = '';
+  if (errEl) errEl.style.display = 'none';
+
   subDialog.show();
 }
 

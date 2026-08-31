@@ -70,9 +70,18 @@ export function navigateTo(path, push = true) {
     item.classList.toggle('active', item.id === route.navId);
   });
 
-  // Update Panels
+  // Update Panels with smooth M3 transition
   document.querySelectorAll('.view-panel').forEach(panel => {
-    panel.style.display = panel.id === route.targetId ? 'flex' : 'none';
+    const isTarget = panel.id === route.targetId;
+    if (isTarget) {
+      panel.style.display = 'flex';
+      panel.classList.remove('view-entering');
+      void panel.offsetWidth;
+      panel.classList.add('view-entering');
+    } else {
+      panel.style.display = 'none';
+      panel.classList.remove('view-entering');
+    }
   });
 
   window.dispatchEvent(new CustomEvent('app:navigated', { detail: { path: route.path } }));

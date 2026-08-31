@@ -516,8 +516,12 @@
         </md-outlined-select>
         <md-outlined-text-field id="inputSubRoom" label="Raum">
         </md-outlined-text-field>
-        <md-outlined-text-field id="inputSubVertrVon" label="Vertreter (Kürzel)">
-        </md-outlined-text-field>
+        <div style="display:flex; gap:12px;">
+          <md-outlined-text-field id="inputSubVertrVon" label="Abwesend (Kürzel)" style="flex:1;">
+          </md-outlined-text-field>
+          <md-outlined-text-field id="inputSubNach" label="Vertretung durch (Kürzel)" style="flex:1;">
+          </md-outlined-text-field>
+        </div>
         <md-outlined-text-field id="inputSubText" label="Bemerkung / Hinweis">
         </md-outlined-text-field>
         <div id="subModalError" style="color:var(--md-sys-color-error); font-size:0.85rem; display:none;"></div>

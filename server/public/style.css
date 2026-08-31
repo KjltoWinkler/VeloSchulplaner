@@ -405,10 +405,29 @@ md-menu:not(:defined) {
   flex-direction: column;
 }
 
+/* MATERIAL 3 FLUID PAGE OPEN ANIMATION */
+@keyframes m3PageEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) scale(0.995);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 .view-panel {
   display: flex;
   flex-direction: column;
   height: 100%;
+}
+
+.view-panel.view-entering,
+.student-tab-panel.view-entering,
+.student-portal-wrapper.view-entering {
+  animation: m3PageEnter 0.28s cubic-bezier(0.05, 0.7, 0.1, 1.0) both;
+  will-change: transform, opacity;
 }
 
 /* TOP BAR INSIDE CANVAS */
