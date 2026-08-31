@@ -44,10 +44,16 @@ function showLoginScreen() {
   setStoredAdminUser(null);
   const uInput = document.getElementById('loginUsername');
   const pInput = document.getElementById('loginPassword');
-  if (uInput) uInput.value = '';
-  if (pInput) pInput.value = '';
-  const errEl = document.getElementById('loginError');
-  if (errEl) errEl.style.display = 'none';
+  if (uInput) {
+    uInput.value = '';
+    uInput.error = false;
+    uInput.errorText = '';
+  }
+  if (pInput) {
+    pInput.value = '';
+    pInput.error = false;
+    pInput.errorText = '';
+  }
   navigateTo('/login');
 }
 
@@ -876,18 +882,55 @@ export function initApp() {
   // --- UNIFIED LOGIN HANDLER ---
   const loginForm = document.getElementById('loginForm');
   const loginSubmitBtn = document.getElementById('loginSubmitBtn');
+  const usernameField = document.getElementById('loginUsername');
+  const passwordField = document.getElementById('loginPassword');
+
+  function clearLoginFieldErrors() {
+    if (usernameField) {
+      usernameField.error = false;
+      usernameField.errorText = '';
+    }
+    if (passwordField) {
+      passwordField.error = false;
+      passwordField.errorText = '';
+    }
+  }
+
+  // Clear error message in real time as soon as user types
+  usernameField?.addEventListener('input', () => {
+    if (usernameField.error) {
+      usernameField.error = false;
+      usernameField.errorText = '';
+    }
+  });
+  passwordField?.addEventListener('input', () => {
+    if (passwordField.error) {
+      passwordField.error = false;
+      passwordField.errorText = '';
+    }
+  });
 
   async function performLogin() {
-    const username = document.getElementById('loginUsername').value.trim();
-    const password = document.getElementById('loginPassword').value.trim();
-    const errEl = document.getElementById('loginError');
-    const errText = document.getElementById('loginErrorText');
+    clearLoginFieldErrors();
 
-    errEl.style.display = 'none';
+    const username = (usernameField?.value || '').trim();
+    const password = (passwordField?.value || '').trim();
 
-    if (!username || !password) {
-      errText.textContent = 'Bitte Benutzername und Passwort eingeben.';
-      errEl.style.display = 'flex';
+    if (!username) {
+      if (usernameField) {
+        usernameField.error = true;
+        usernameField.errorText = 'Fülle dieses Feld aus.';
+        usernameField.focus();
+      }
+      return;
+    }
+
+    if (!password) {
+      if (passwordField) {
+        passwordField.error = true;
+        passwordField.errorText = 'Fülle dieses Feld aus.';
+        passwordField.focus();
+      }
       return;
     }
 
@@ -900,8 +943,14 @@ export function initApp() {
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        errText.textContent = data.error || 'Anmeldung fehlgeschlagen.';
-        errEl.style.display = 'flex';
+        if (usernameField) {
+          usernameField.error = true;
+          usernameField.errorText = data.error || 'Ungültiger Benutzername oder Passwort.';
+          usernameField.focus();
+        }
+        if (passwordField) {
+          passwordField.error = true;
+        }
         return;
       }
 
@@ -914,8 +963,10 @@ export function initApp() {
         showAppScreen(data.user);
       }
     } catch (err) {
-      errText.textContent = 'Verbindung zum Server fehlgeschlagen.';
-      errEl.style.display = 'flex';
+      if (usernameField) {
+        usernameField.error = true;
+        usernameField.errorText = 'Verbindung zum Server fehlgeschlagen.';
+      }
     }
   }
 
