@@ -642,18 +642,30 @@
 
       <!-- RIGHT ACTIONS -->
       <div class="header-right">
-        <div class="user-info-badge">
-          <div class="avatar-btn" id="headerAvatar">A</div>
-          <span id="headerUsername">admin</span>
-        </div>
+        <span style="position: relative;">
+          <button id="headerUserMenuBtn" class="user-info-badge" style="border:1px solid var(--md-sys-color-outline-variant); cursor:pointer; font-family:inherit; color:inherit; background:var(--md-sys-color-surface-container);">
+            <div class="avatar-btn" id="headerAvatar">A</div>
+            <span id="headerUsername">admin</span>
+            <span class="material-symbols-outlined" style="font-size:18px;">arrow_drop_down</span>
+          </button>
+          <md-menu id="headerUserMenu" anchor="headerUserMenuBtn">
+            <md-menu-item disabled>
+              <span slot="start" class="material-symbols-outlined">admin_panel_settings</span>
+              <div slot="headline">Administrator</div>
+              <div slot="supporting-text">Web-Portal Verwaltung</div>
+            </md-menu-item>
+            <md-divider></md-divider>
+            <md-menu-item id="menuLogoutItem">
+              <span slot="start" class="material-symbols-outlined" style="color:var(--md-sys-color-error);">logout</span>
+              <div slot="headline" style="color:var(--md-sys-color-error);">Abmelden</div>
+            </md-menu-item>
+          </md-menu>
+        </span>
         <md-icon-button title="Aktualisieren" id="headerRefreshBtn">
           <span class="material-symbols-outlined">refresh</span>
         </md-icon-button>
         <md-icon-button title="Hilfe & Klassensystem" id="headerHelpBtn">
           <span class="material-symbols-outlined">help_outline</span>
-        </md-icon-button>
-        <md-icon-button title="Abmelden" id="headerLogoutBtn" style="color:var(--md-sys-color-error);">
-          <span class="material-symbols-outlined">logout</span>
         </md-icon-button>
       </div>
     </header>
@@ -841,12 +853,12 @@
     </div>
   </div>
 
-  <!-- MD-DIALOG: ADD USER -->
+  <!-- MD-DIALOG: ADD USER (Material Web Dialog) -->
   <md-dialog id="addUserDialog">
-    <div slot="headline">
-      <span class="material-symbols-outlined" style="vertical-align:middle; margin-right:8px; color:var(--md-sys-color-primary);">person_add</span>
-      Neuen Benutzer anlegen
-    </div>
+    <md-icon slot="icon">
+      <span class="material-symbols-outlined" style="color:var(--md-sys-color-primary);">person_add</span>
+    </md-icon>
+    <div slot="headline">Neuen Benutzer anlegen</div>
     <form slot="content" id="addUserForm" method="dialog" class="dialog-form">
       <md-outlined-text-field id="inputUsername" label="Benutzername *" required supporting-text="Einmaliger Login-Name (bleibt unverändert)">
       </md-outlined-text-field>
@@ -876,17 +888,17 @@
       <div id="userModalError" style="color:var(--md-sys-color-error); font-size:0.85rem; display:none;"></div>
     </form>
     <div slot="actions">
-      <md-text-button id="closeAddUserModal">Abbrechen</md-text-button>
+      <md-text-button form="addUserForm" value="cancel" id="closeAddUserModal">Abbrechen</md-text-button>
       <md-filled-button id="submitAddUserBtn">Erstellen</md-filled-button>
     </div>
   </md-dialog>
 
-  <!-- MD-DIALOG: ADD SUBSTITUTION -->
+  <!-- MD-DIALOG: ADD SUBSTITUTION (Material Web Dialog) -->
   <md-dialog id="addSubDialog">
-    <div slot="headline">
-      <span class="material-symbols-outlined" style="vertical-align:middle; margin-right:8px; color:#81c995;">event_note</span>
-      Vertretungseintrag anlegen
-    </div>
+    <md-icon slot="icon">
+      <span class="material-symbols-outlined" style="color:#81c995;">event_note</span>
+    </md-icon>
+    <div slot="headline">Vertretungseintrag anlegen</div>
     <form slot="content" id="addSubForm" method="dialog" class="dialog-form">
       <md-outlined-text-field id="inputSubDay" label="Tag & Datum *" required>
       </md-outlined-text-field>
@@ -911,8 +923,27 @@
       <div id="subModalError" style="color:var(--md-sys-color-error); font-size:0.85rem; display:none;"></div>
     </form>
     <div slot="actions">
-      <md-text-button id="closeAddSubModal">Abbrechen</md-text-button>
+      <md-text-button form="addSubForm" value="cancel" id="closeAddSubModal">Abbrechen</md-text-button>
       <md-filled-button id="submitAddSubBtn">Speichern</md-filled-button>
+    </div>
+  </md-dialog>
+
+  <!-- MD-DIALOG: CONFIRM DELETE (Material Web Dialog) -->
+  <md-dialog id="confirmDeleteDialog">
+    <md-icon slot="icon">
+      <span class="material-symbols-outlined" style="color:var(--md-sys-color-error);">delete</span>
+    </md-icon>
+    <div slot="headline" id="confirmDeleteTitle">Eintrag löschen</div>
+    <form slot="content" id="confirmDeleteForm" method="dialog">
+      <p id="confirmDeleteMsg" style="color:var(--md-sys-color-on-surface); line-height:1.5; font-size:0.95rem;">
+        Möchtest du diesen Eintrag wirklich löschen?
+      </p>
+    </form>
+    <div slot="actions">
+      <md-text-button id="confirmDeleteCancelBtn">Abbrechen</md-text-button>
+      <md-filled-button id="confirmDeleteConfirmBtn" style="--md-sys-color-primary: var(--md-sys-color-error); --md-sys-color-on-primary: #fff;">
+        Löschen
+      </md-filled-button>
     </div>
   </md-dialog>
 
@@ -1203,10 +1234,12 @@
         return;
       }
 
-      filtered.forEach(u => {
+      filtered.forEach((u, idx) => {
         const tr = document.createElement('tr');
         const roleLabel = u.role === 'schueler' ? 'Schüler' : (u.role === 'lehrer' ? 'Lehrer' : 'Admin');
         const pwdDisplay = u.initialPassword || '••••••••';
+        const userMenuBtnId = `uMenuBtn_${idx}`;
+        const userMenuId = `uMenu_${idx}`;
 
         tr.innerHTML = `
           <td><strong>${u.username}</strong></td>
@@ -1222,40 +1255,73 @@
             </div>
           </td>
           <td>
-            <div class="row-actions">
+            <div class="row-actions" style="position: relative;">
               ${u.username !== 'admin' ? `
-                <md-icon-button class="delete-user-btn" data-username="${u.username}" title="Benutzer löschen">
-                  <span class="material-symbols-outlined" style="color:var(--md-sys-color-error); font-size:18px;">delete</span>
-                </md-icon-button>
+                <span style="position: relative;">
+                  <md-icon-button id="${userMenuBtnId}" title="Optionen">
+                    <span class="material-symbols-outlined">more_vert</span>
+                  </md-icon-button>
+                  <md-menu id="${userMenuId}" anchor="${userMenuBtnId}">
+                    <md-menu-item class="action-copy-item" data-username="${u.username}" data-password="${pwdDisplay}" data-class="${u.assignedClass || ''}">
+                      <span slot="start" class="material-symbols-outlined">content_copy</span>
+                      <div slot="headline">Zugangsdaten kopieren</div>
+                    </md-menu-item>
+                    <md-divider></md-divider>
+                    <md-menu-item class="action-delete-user" data-username="${u.username}">
+                      <span slot="start" class="material-symbols-outlined" style="color:var(--md-sys-color-error);">delete</span>
+                      <div slot="headline" style="color:var(--md-sys-color-error);">Benutzer löschen</div>
+                    </md-menu-item>
+                  </md-menu>
+                </span>
               ` : '<span style="font-size:0.75rem; color:var(--md-sys-color-outline); padding-right:8px;">System</span>'}
             </div>
           </td>
         `;
         tbody.appendChild(tr);
+
+        if (u.username !== 'admin') {
+          const btn = tr.querySelector(`#${userMenuBtnId}`);
+          const menu = tr.querySelector(`#${userMenuId}`);
+          if (btn && menu) {
+            btn.addEventListener('click', (e) => {
+              e.stopPropagation();
+              menu.open = !menu.open;
+            });
+          }
+        }
       });
 
-      // Copy Credentials Handler
-      document.querySelectorAll('.copy-creds-btn').forEach(btn => {
+      // Copy Credentials Handler (Buttons & Menu Items)
+      const copyCreds = (uname, pwd, cls) => {
+        let text = `Benutzername: ${uname}\nPasswort: ${pwd}`;
+        if (cls) text += `\nKlasse: ${cls}`;
+        navigator.clipboard.writeText(text).then(() => {
+          showToast(`Zugangsdaten für "${uname}" kopiert!`);
+        });
+      };
+
+      document.querySelectorAll('.copy-creds-btn, .action-copy-item').forEach(btn => {
         btn.addEventListener('click', () => {
           const uname = btn.getAttribute('data-username');
           const pwd = btn.getAttribute('data-password');
           const cls = btn.getAttribute('data-class');
-          let text = `Benutzername: ${uname}\nPasswort: ${pwd}`;
-          if (cls) text += `\nKlasse: ${cls}`;
-          navigator.clipboard.writeText(text).then(() => {
-            showToast(`Zugangsdaten für "${uname}" kopiert!`);
-          });
+          copyCreds(uname, pwd, cls);
         });
       });
 
-      // Delete User Handler
-      document.querySelectorAll('.delete-user-btn').forEach(btn => {
-        btn.addEventListener('click', async () => {
+      // Delete User Handler via Material 3 md-dialog
+      document.querySelectorAll('.action-delete-user').forEach(btn => {
+        btn.addEventListener('click', () => {
           const uname = btn.getAttribute('data-username');
-          if (confirm(`Benutzer "${uname}" wirklich löschen?`)) {
-            await authFetch(`/api/admin/users/${uname}`, { method: 'DELETE' });
-            loadUsers();
-          }
+          openConfirmDeleteDialog(
+            `Benutzer "${uname}" löschen?`,
+            `Möchtest du das Benutzerkonto "${uname}" wirklich unwiderruflich löschen?`,
+            async () => {
+              await authFetch(`/api/admin/users/${uname}`, { method: 'DELETE' });
+              showToast(`Benutzer "${uname}" gelöscht.`);
+              loadUsers();
+            }
+          );
         });
       });
     }
@@ -1372,8 +1438,11 @@
         return;
       }
 
-      filtered.forEach(s => {
+      filtered.forEach((s, idx) => {
         const tr = document.createElement('tr');
+        const subMenuBtnId = `subActionsBtn_${idx}`;
+        const subMenuId = `subActionsMenu_${idx}`;
+
         tr.innerHTML = `
           <td><strong>${s.day}</strong></td>
           <td><span class="class-chip">${s.className}</span></td>
@@ -1384,23 +1453,46 @@
           <td>${s.vertrVon ? `${s.vertrVon} → ${s.nach || '?'}` : '—'}</td>
           <td>${s.text || '—'}</td>
           <td>
-            <div class="row-actions">
-              <md-icon-button class="delete-sub-btn" data-id="${s.id}" title="Eintrag löschen">
-                <span class="material-symbols-outlined" style="color:var(--md-sys-color-error); font-size:18px;">delete</span>
-              </md-icon-button>
+            <div class="row-actions" style="position: relative;">
+              <span style="position: relative;">
+                <md-icon-button id="${subMenuBtnId}" title="Optionen">
+                  <span class="material-symbols-outlined">more_vert</span>
+                </md-icon-button>
+                <md-menu id="${subMenuId}" anchor="${subMenuBtnId}">
+                  <md-menu-item class="action-delete-sub" data-id="${s.id}" data-name="${s.className} (${s.subject})">
+                    <span slot="start" class="material-symbols-outlined" style="color:var(--md-sys-color-error);">delete</span>
+                    <div slot="headline" style="color:var(--md-sys-color-error);">Eintrag löschen</div>
+                  </md-menu-item>
+                </md-menu>
+              </span>
             </div>
           </td>
         `;
         tbody.appendChild(tr);
+
+        const btn = tr.querySelector(`#${subMenuBtnId}`);
+        const menu = tr.querySelector(`#${subMenuId}`);
+        if (btn && menu) {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            menu.open = !menu.open;
+          });
+        }
       });
 
-      document.querySelectorAll('.delete-sub-btn').forEach(btn => {
-        btn.addEventListener('click', async () => {
+      document.querySelectorAll('.action-delete-sub').forEach(btn => {
+        btn.addEventListener('click', () => {
           const id = btn.getAttribute('data-id');
-          if (confirm('Eintrag wirklich löschen?')) {
-            await authFetch(`/api/admin/substitutions/${id}`, { method: 'DELETE' });
-            loadSubs();
-          }
+          const name = btn.getAttribute('data-name');
+          openConfirmDeleteDialog(
+            'Vertretung löschen?',
+            `Möchtest du die Vertretung für "${name}" wirklich löschen?`,
+            async () => {
+              await authFetch(`/api/admin/substitutions/${id}`, { method: 'DELETE' });
+              showToast('Vertretungseintrag gelöscht.');
+              loadSubs();
+            }
+          );
         });
       });
     }
@@ -1489,6 +1581,45 @@
         liveTestResult.innerHTML = `<span style="color:var(--md-sys-color-error);">✗ Ungültig (Muss z. B. 9aR, 8bH sein)</span>`;
       }
     });
+
+    // --- CONFIRM DELETE DIALOG (Material Web Dialog) ---
+    let pendingDeleteAction = null;
+    const confirmDeleteDialog = document.getElementById('confirmDeleteDialog');
+
+    function openConfirmDeleteDialog(title, message, onConfirm) {
+      document.getElementById('confirmDeleteTitle').textContent = title;
+      document.getElementById('confirmDeleteMsg').textContent = message;
+      pendingDeleteAction = onConfirm;
+      confirmDeleteDialog.show();
+    }
+
+    document.getElementById('confirmDeleteCancelBtn').addEventListener('click', () => {
+      confirmDeleteDialog.close();
+      pendingDeleteAction = null;
+    });
+
+    document.getElementById('confirmDeleteConfirmBtn').addEventListener('click', async () => {
+      confirmDeleteDialog.close();
+      if (pendingDeleteAction) {
+        await pendingDeleteAction();
+        pendingDeleteAction = null;
+      }
+    });
+
+    // --- HEADER USER PROFILE MENU (Material Web md-menu) ---
+    const headerUserMenuBtn = document.getElementById('headerUserMenuBtn');
+    const headerUserMenu = document.getElementById('headerUserMenu');
+    if (headerUserMenuBtn && headerUserMenu) {
+      headerUserMenuBtn.addEventListener('click', () => {
+        headerUserMenu.open = !headerUserMenu.open;
+      });
+    }
+    const menuLogoutItem = document.getElementById('menuLogoutItem');
+    if (menuLogoutItem) {
+      menuLogoutItem.addEventListener('click', () => {
+        showLoginScreen();
+      });
+    }
 
     // Auto-login check on page load
     (function init() {
