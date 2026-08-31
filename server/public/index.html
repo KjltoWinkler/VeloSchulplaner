@@ -451,7 +451,7 @@
     .drive-table-container {
       border: 1px solid var(--md-sys-color-outline-variant);
       border-radius: 12px;
-      overflow: hidden;
+      overflow: visible;
       background: var(--drive-canvas-bg);
     }
 
@@ -1005,6 +1005,51 @@
     </div>
   </div>
 
+  <!-- M3 MODAL: EDIT USER -->
+  <div id="editUserModal" class="m3-modal-overlay">
+    <div class="m3-dialog-card">
+      <div class="m3-dialog-header">
+        <span class="material-symbols-outlined m3-dialog-icon" style="color:var(--md-sys-color-primary);">edit</span>
+        <h2 class="m3-dialog-title">Benutzer bearbeiten</h2>
+      </div>
+      <form id="editUserForm" class="dialog-form" onsubmit="return false;">
+        <md-outlined-text-field id="editUsername" label="Benutzername" readonly disabled supporting-text="Benutzername kann nicht geändert werden">
+        </md-outlined-text-field>
+
+        <md-outlined-text-field id="editName" label="Vollständiger Name">
+        </md-outlined-text-field>
+        
+        <div style="display:flex; gap:12px; align-items:flex-start;">
+          <md-outlined-text-field id="editPassword" label="Neues Passwort (optional)" supporting-text="Leer lassen, um aktuelles Passwort zu behalten" style="flex:1;">
+          </md-outlined-text-field>
+          <md-filled-tonal-button type="button" id="btnGenEditPassword" style="margin-top:2px; height:54px;" title="Zufälliges Passwort generieren">
+            <span slot="icon" class="material-symbols-outlined">casino</span>
+          </md-filled-tonal-button>
+        </div>
+        
+        <md-outlined-select id="editRole" label="Rolle *" required>
+          <md-select-option value="schueler"><div slot="headline">Schüler (Klassengebunden)</div></md-select-option>
+          <md-select-option value="lehrer"><div slot="headline">Lehrer</div></md-select-option>
+          <md-select-option value="admin"><div slot="headline">Administrator (Web-Zugang)</div></md-select-option>
+        </md-outlined-select>
+
+        <div id="editClassInputGroup">
+          <md-outlined-text-field id="editClass" label="Klasse (z. B. 9aR, 8bH)" supporting-text="Format: [Stufe][a-z][H/R]">
+          </md-outlined-text-field>
+          <div id="editClassValidationNotice" style="font-size:0.8rem; margin-top:4px; min-height:18px;"></div>
+        </div>
+        <div id="editUserModalError" style="color:var(--md-sys-color-error); font-size:0.85rem; display:none;"></div>
+      </form>
+      <div class="m3-dialog-actions">
+        <md-text-button id="closeEditUserModal">Abbrechen</md-text-button>
+        <md-filled-tonal-button id="submitEditUserBtn">
+          Speichern
+          <span slot="icon" class="material-symbols-outlined">save</span>
+        </md-filled-tonal-button>
+      </div>
+    </div>
+  </div>
+
   <!-- M3 MODAL: ADD SUBSTITUTION -->
   <div id="addSubModal" class="m3-modal-overlay">
     <div class="m3-dialog-card">
@@ -1343,6 +1388,97 @@
       }
     });
 
+    // --- EDIT USER MODAL ---
+    const editUserDialog = createM3Modal('editUserModal');
+
+    function openEditUserModal(username) {
+      const user = usersList.find(u => u.username === username);
+      if (!user) return;
+      document.getElementById('editUsername').value = user.username;
+      document.getElementById('editName').value = user.name || '';
+      document.getElementById('editPassword').value = '';
+      document.getElementById('editRole').value = user.role;
+      document.getElementById('editClass').value = user.assignedClass || '';
+      document.getElementById('editClassInputGroup').style.display = user.role === 'admin' ? 'none' : 'block';
+      document.getElementById('editClassValidationNotice').textContent = '';
+      document.getElementById('editUserModalError').style.display = 'none';
+      editUserDialog.show();
+    }
+
+    document.getElementById('closeEditUserModal').addEventListener('click', () => editUserDialog.close());
+
+    document.getElementById('editRole').addEventListener('change', (e) => {
+      document.getElementById('editClassInputGroup').style.display = e.target.value === 'admin' ? 'none' : 'block';
+    });
+
+    document.getElementById('btnGenEditPassword').addEventListener('click', () => {
+      const chars = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!#%";
+      let pwd = "";
+      for (let i = 0; i < 10; i++) {
+        pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      document.getElementById('editPassword').value = pwd;
+    });
+
+    document.getElementById('editClass').addEventListener('input', (e) => {
+      const val = e.target.value.trim();
+      const notice = document.getElementById('editClassValidationNotice');
+      if (!val) { notice.textContent = ''; return; }
+      const norm = normalizeClassCode(val);
+      if (isValidClassCode(norm)) {
+        notice.innerHTML = `<span style="color:#81c995;">✓ Gültig: <strong>${norm}</strong></span>`;
+      } else {
+        notice.innerHTML = `<span style="color:var(--md-sys-color-error);">✗ Ungültig (z. B. 9aR, 8bH)</span>`;
+      }
+    });
+
+    document.getElementById('submitEditUserBtn').addEventListener('click', async () => {
+      const username = document.getElementById('editUsername').value;
+      const name = document.getElementById('editName').value.trim();
+      const password = document.getElementById('editPassword').value.trim();
+      const role = document.getElementById('editRole').value;
+      const rawClass = document.getElementById('editClass').value.trim();
+      const errEl = document.getElementById('editUserModalError');
+
+      const payload = { role, name };
+      if (password) payload.password = password;
+      if (role !== 'admin') {
+        if (rawClass) {
+          const norm = normalizeClassCode(rawClass);
+          if (!isValidClassCode(norm)) {
+            errEl.textContent = 'Klassenkürzel ungültig (z. B. 9aR, 8bH).';
+            errEl.style.display = 'block';
+            return;
+          }
+          payload.assignedClass = norm;
+        } else {
+          payload.assignedClass = '';
+        }
+      } else {
+        payload.assignedClass = '';
+      }
+
+      try {
+        const res = await authFetch(`/api/admin/users/${encodeURIComponent(username)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          errEl.textContent = data.error || 'Fehler beim Bearbeiten.';
+          errEl.style.display = 'block';
+          return;
+        }
+        editUserDialog.close();
+        showToast(`Benutzer "${username}" erfolgreich aktualisiert.`);
+        loadUsers();
+      } catch(e) {
+        errEl.textContent = 'Verbindungsfehler.';
+        errEl.style.display = 'block';
+      }
+    });
+
     // Fetch & Render Users
     async function loadUsers() {
       try {
@@ -1386,9 +1522,12 @@
           <td><span class="role-badge role-${u.role}">${roleLabel}</span></td>
           <td>${u.assignedClass ? `<span class="class-chip">${u.assignedClass}</span>` : '—'}</td>
           <td>
-            <div style="display:flex; align-items:center; gap:6px;">
-              <code style="background:var(--md-sys-color-surface-container); padding:3px 8px; border-radius:6px; font-family:monospace; font-size:0.85rem;">${pwdDisplay}</code>
-              <md-icon-button class="copy-creds-btn" data-username="${u.username}" data-password="${pwdDisplay}" data-class="${u.assignedClass || ''}" title="Zugangsdaten für Zettel/Ausgabe kopieren">
+            <div style="display:flex; align-items:center; gap:4px;">
+              <code id="pwdVal_${idx}" data-pwd="${u.initialPassword || ''}" data-masked="true" style="background:var(--md-sys-color-surface-container); padding:4px 10px; border-radius:6px; font-family:monospace; font-size:0.88rem; min-width:80px; display:inline-block; letter-spacing:1.5px;">••••••••</code>
+              <md-icon-button class="toggle-pwd-btn" data-target="pwdVal_${idx}" title="Passwort aufdecken/verbergen">
+                <span class="material-symbols-outlined" style="font-size:18px;">visibility</span>
+              </md-icon-button>
+              <md-icon-button class="copy-creds-btn" data-username="${u.username}" data-password="${u.initialPassword || ''}" data-class="${u.assignedClass || ''}" title="Zugangsdaten für Zettel/Ausgabe kopieren">
                 <span class="material-symbols-outlined" style="font-size:18px;">content_copy</span>
               </md-icon-button>
             </div>
@@ -1400,8 +1539,12 @@
                   <md-icon-button id="${userMenuBtnId}" title="Optionen">
                     <span class="material-symbols-outlined">more_vert</span>
                   </md-icon-button>
-                  <md-menu id="${userMenuId}" anchor="${userMenuBtnId}">
-                    <md-menu-item class="action-copy-item" data-username="${u.username}" data-password="${pwdDisplay}" data-class="${u.assignedClass || ''}">
+                  <md-menu id="${userMenuId}" anchor="${userMenuBtnId}" positioning="popover">
+                    <md-menu-item class="action-edit-user" data-username="${u.username}">
+                      <span slot="start" class="material-symbols-outlined" style="color:var(--md-sys-color-primary);">edit</span>
+                      <div slot="headline">Nutzer bearbeiten</div>
+                    </md-menu-item>
+                    <md-menu-item class="action-copy-item" data-username="${u.username}" data-password="${u.initialPassword || ''}" data-class="${u.assignedClass || ''}">
                       <span slot="start" class="material-symbols-outlined">content_copy</span>
                       <div slot="headline">Zugangsdaten kopieren</div>
                     </md-menu-item>
@@ -1430,6 +1573,25 @@
         }
       });
 
+      // Toggle Password Masking / Revealing
+      document.querySelectorAll('.toggle-pwd-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const targetId = btn.getAttribute('data-target');
+          const el = document.getElementById(targetId);
+          const icon = btn.querySelector('.material-symbols-outlined');
+          if (!el || !icon) return;
+          if (el.getAttribute('data-masked') === 'true') {
+            el.textContent = el.getAttribute('data-pwd') || '(kein Passwort)';
+            el.setAttribute('data-masked', 'false');
+            icon.textContent = 'visibility_off';
+          } else {
+            el.textContent = '••••••••';
+            el.setAttribute('data-masked', 'true');
+            icon.textContent = 'visibility';
+          }
+        });
+      });
+
       // Copy Credentials Handler (Buttons & Menu Items)
       const copyCreds = (uname, pwd, cls) => {
         let text = `Benutzername: ${uname}\nPasswort: ${pwd}`;
@@ -1448,7 +1610,15 @@
         });
       });
 
-      // Delete User Handler via Material 3 md-dialog
+      // Edit User Handler
+      document.querySelectorAll('.action-edit-user').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const uname = btn.getAttribute('data-username');
+          openEditUserModal(uname);
+        });
+      });
+
+      // Delete User Handler via Material 3 modal
       document.querySelectorAll('.action-delete-user').forEach(btn => {
         btn.addEventListener('click', () => {
           const uname = btn.getAttribute('data-username');
@@ -1597,7 +1767,7 @@
                 <md-icon-button id="${subMenuBtnId}" title="Optionen">
                   <span class="material-symbols-outlined">more_vert</span>
                 </md-icon-button>
-                <md-menu id="${subMenuId}" anchor="${subMenuBtnId}">
+                <md-menu id="${subMenuId}" anchor="${subMenuBtnId}" positioning="popover">
                   <md-menu-item class="action-delete-sub" data-id="${s.id}" data-name="${s.className} (${s.subject})">
                     <span slot="start" class="material-symbols-outlined" style="color:var(--md-sys-color-error);">delete</span>
                     <div slot="headline" style="color:var(--md-sys-color-error);">Eintrag löschen</div>
