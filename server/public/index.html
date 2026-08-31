@@ -85,6 +85,12 @@
       user-select: text;
     }
 
+    /* Never show closed dialogs or menus in page flow */
+    md-dialog:not([open]),
+    md-menu:not([open]) {
+      display: none !important;
+    }
+
     .material-symbols-outlined {
       font-family: 'Material Symbols Outlined' !important;
       font-weight: normal;
