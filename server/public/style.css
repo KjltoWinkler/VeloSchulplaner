@@ -906,6 +906,43 @@ md-text-button .material-symbols-outlined {
   border-left: 3px solid var(--md-sys-color-error);
 }
 
+/* Timetable Drag & Drop */
+.timetable-slot[draggable="true"] {
+  cursor: grab;
+  user-select: none;
+}
+
+.timetable-slot[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+.timetable-slot.is-dragging {
+  opacity: 0.35 !important;
+  transform: scale(0.96);
+  border: 2px dashed var(--md-sys-color-primary) !important;
+  box-shadow: none !important;
+}
+
+.timetable-slot.drag-over {
+  background: var(--md-sys-color-primary-container) !important;
+  border: 2px solid var(--md-sys-color-primary) !important;
+  transform: scale(1.03);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  z-index: 5;
+}
+
+.timetable-slot.drag-over .slot-subject,
+.timetable-slot.drag-over .slot-meta,
+.timetable-slot.drag-over .slot-meta span {
+  color: var(--md-sys-color-on-primary-container) !important;
+}
+
+.timetable-slot.empty.drag-over {
+  opacity: 1;
+  background: var(--md-sys-color-secondary-container) !important;
+  border: 2px dashed var(--md-sys-color-secondary) !important;
+}
+
 .timetable-slot.sub-entfall .slot-subject {
   text-decoration: line-through;
   opacity: 0.6;

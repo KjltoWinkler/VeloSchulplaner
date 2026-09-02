@@ -595,6 +595,9 @@ async function loadTimetableForClass(classCode) {
   }
 }
 
+let draggedSlot = null;
+let isDraggingNow = false;
+
 function renderTimetableGrid() {
   const tbody = document.getElementById('timetableGridBody');
   if (!tbody) return;
@@ -619,10 +622,11 @@ function renderTimetableGrid() {
     days.forEach(day => {
       const td = document.createElement('td');
       const slot = currentTimetable[day] && currentTimetable[day][p];
+      const hasLesson = Boolean(slot && slot.subject);
 
-      if (slot && slot.subject) {
+      if (hasLesson) {
         td.innerHTML = `
-          <div class="timetable-slot filled" data-day="${day}" data-period="${p}">
+          <div class="timetable-slot filled" draggable="true" data-day="${day}" data-period="${p}">
             <div class="slot-subject">${slot.subject}</div>
             <div class="slot-meta">
               <span class="slot-teacher">${slot.teacher || '—'}</span>
@@ -638,7 +642,96 @@ function renderTimetableGrid() {
         `;
       }
 
-      td.querySelector('.timetable-slot').addEventListener('click', () => {
+      const slotEl = td.querySelector('.timetable-slot');
+
+      // Drag Source Handler (for filled slots)
+      if (hasLesson) {
+        slotEl.addEventListener('dragstart', (e) => {
+          draggedSlot = { day, period: p, lesson: slot };
+          isDraggingNow = true;
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', JSON.stringify({ day, period: p }));
+          setTimeout(() => {
+            slotEl.classList.add('is-dragging');
+          }, 0);
+        });
+
+        slotEl.addEventListener('dragend', () => {
+          slotEl.classList.remove('is-dragging');
+          document.querySelectorAll('.timetable-slot.drag-over').forEach(el => el.classList.remove('drag-over'));
+          draggedSlot = null;
+          setTimeout(() => {
+            isDraggingNow = false;
+          }, 60);
+        });
+      }
+
+      // Drop Target Handler (both empty and filled slots)
+      slotEl.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        if (!draggedSlot) return;
+        if (draggedSlot.day === day && draggedSlot.period === p) return;
+        e.dataTransfer.dropEffect = 'move';
+        if (!slotEl.classList.contains('drag-over')) {
+          slotEl.classList.add('drag-over');
+        }
+      });
+
+      slotEl.addEventListener('dragleave', (e) => {
+        if (!slotEl.contains(e.relatedTarget)) {
+          slotEl.classList.remove('drag-over');
+        }
+      });
+
+      slotEl.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        slotEl.classList.remove('drag-over');
+        if (!draggedSlot) return;
+
+        const sourceDay = draggedSlot.day;
+        const sourcePeriod = draggedSlot.period;
+        const targetDay = day;
+        const targetPeriod = p;
+
+        if (sourceDay === targetDay && sourcePeriod === targetPeriod) return;
+
+        if (!currentTimetable[sourceDay]) currentTimetable[sourceDay] = {};
+        if (!currentTimetable[targetDay]) currentTimetable[targetDay] = {};
+
+        const sourceLesson = currentTimetable[sourceDay][sourcePeriod];
+        const targetLesson = currentTimetable[targetDay][targetPeriod];
+
+        if (!sourceLesson) return;
+
+        if (targetLesson && targetLesson.subject) {
+          // Swap both lessons
+          currentTimetable[targetDay][targetPeriod] = sourceLesson;
+          currentTimetable[sourceDay][sourcePeriod] = targetLesson;
+          showToast(`"${sourceLesson.subject}" und "${targetLesson.subject}" getauscht.`);
+        } else {
+          // Move lesson to empty slot
+          currentTimetable[targetDay][targetPeriod] = sourceLesson;
+          delete currentTimetable[sourceDay][sourcePeriod];
+          showToast(`"${sourceLesson.subject}" nach ${targetDay}, ${targetPeriod}. Stunde verschoben.`);
+        }
+
+        renderTimetableGrid();
+
+        // Persist change to server
+        try {
+          await authFetch(`/api/admin/timetables/${encodeURIComponent(selectedTimetableClass)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(currentTimetable)
+          });
+        } catch (err) {
+          showToast('Fehler beim Speichern der Änderung.');
+        }
+      });
+
+      // Click to edit modal (only when not dragging)
+      slotEl.addEventListener('click', () => {
+        if (isDraggingNow) return;
         openLessonModal(day, p, slot || {}, async ({ day: d, period: per, lessonData }) => {
           if (!currentTimetable[d]) currentTimetable[d] = {};
           if (lessonData && lessonData.subject) {
