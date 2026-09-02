@@ -24,7 +24,8 @@ import {
   openSubModal,
   openConfirmDeleteDialog,
   openClassModal,
-  openLessonModal
+  openLessonModal,
+  openImportTimetableModal
 } from './modals.js';
 
 let usersList = [];
@@ -700,6 +701,17 @@ export function initApp() {
     onSubSaved: () => loadSubs(),
     onClassSaved: () => loadClasses(),
     onLessonSaved: () => renderTimetableGrid(),
+    onTimetableImported: async (data) => {
+      await loadClasses();
+      if (selectedTimetableClass) {
+        await loadTimetableForClass(selectedTimetableClass);
+      } else if (data.importedClasses && data.importedClasses.length > 0) {
+        selectedTimetableClass = data.importedClasses[0];
+        const selectEl = document.getElementById('timetableClassSelect');
+        if (selectEl) selectEl.value = selectedTimetableClass;
+        await loadTimetableForClass(selectedTimetableClass);
+      }
+    },
     getUsersList: () => usersList,
     getClassesList: () => classesList
   });
@@ -784,6 +796,49 @@ export function initApp() {
           renderTimetableGrid();
         }
       );
+    });
+  }
+
+  // Import Timetable Button
+  const importTimetableBtn = document.getElementById('importTimetableBtn');
+  if (importTimetableBtn) {
+    importTimetableBtn.addEventListener('click', () => {
+      openImportTimetableModal(selectedTimetableClass, classesList);
+    });
+  }
+
+  // Export Timetable Button
+  const exportTimetableBtn = document.getElementById('exportTimetableBtn');
+  if (exportTimetableBtn) {
+    exportTimetableBtn.addEventListener('click', async () => {
+      try {
+        if (selectedTimetableClass && currentTimetable && Object.keys(currentTimetable).length > 0) {
+          const exportObj = {
+            [selectedTimetableClass]: currentTimetable
+          };
+          const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `stundenplan_${selectedTimetableClass}.json`;
+          a.click();
+          URL.revokeObjectURL(url);
+          showToast(`Stundenplan für ${selectedTimetableClass} exportiert.`);
+        } else {
+          const res = await authFetch('/api/admin/timetables');
+          const allTimetables = await res.json();
+          const blob = new Blob([JSON.stringify(allTimetables, null, 2)], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'stundenplaene_alle.json';
+          a.click();
+          URL.revokeObjectURL(url);
+          showToast('Alle Stundenpläne exportiert.');
+        }
+      } catch (err) {
+        showToast('Fehler beim Exportieren.');
+      }
     });
   }
 

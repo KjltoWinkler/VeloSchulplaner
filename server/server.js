@@ -733,8 +733,96 @@ app.put("/api/admin/timetables/:classCode", requireAdmin, (req, res) => {
   const timetables = readData(TIMETABLES_FILE, defaultTimetables);
   timetables[code] = schedule;
   writeData(TIMETABLES_FILE, timetables);
-
   res.json({ success: true, message: "Stundenplan gespeichert.", schedule });
+});
+
+app.get("/api/admin/timetables", requireAdmin, (req, res) => {
+  const timetables = readData(TIMETABLES_FILE, defaultTimetables);
+  res.json(timetables);
+});
+
+app.post("/api/admin/timetables/import", requireAdmin, (req, res) => {
+  let { timetables: incomingMulti, classCode, schedule, rawData } = req.body || {};
+
+  let dataToImport = {};
+
+  if (incomingMulti && typeof incomingMulti === "object") {
+    dataToImport = incomingMulti;
+  } else if (rawData && typeof rawData === "object") {
+    dataToImport = rawData;
+  } else if (classCode && schedule && typeof schedule === "object") {
+    dataToImport[normalizeClassCode(classCode)] = schedule;
+  } else if (req.body && typeof req.body === "object") {
+    const keys = Object.keys(req.body);
+    const dayNames = ["montag", "dienstag", "mittwoch", "donnerstag", "freitag", "samstag", "sonntag"];
+    const isSingleClassSchedule = keys.some(k => dayNames.includes(k.toLowerCase()));
+
+    if (isSingleClassSchedule) {
+      const targetClass = classCode ? normalizeClassCode(classCode) : (req.query.classCode ? normalizeClassCode(req.query.classCode) : "");
+      if (!targetClass) {
+        return res.status(400).json({ error: "Bitte gib eine Zielklasse an (z. B. 9aR) für diesen Stundenplan." });
+      }
+      dataToImport[targetClass] = req.body;
+    } else {
+      dataToImport = req.body;
+    }
+  }
+
+  const existingTimetables = readData(TIMETABLES_FILE, defaultTimetables);
+  const existingClasses = readData(CLASSES_FILE, defaultClasses);
+  let importedClasses = [];
+  let totalLessons = 0;
+  let classesCreated = 0;
+
+  for (const [rawKey, sched] of Object.entries(dataToImport)) {
+    if (!sched || typeof sched !== "object") continue;
+    const normCode = normalizeClassCode(rawKey);
+    if (!normCode) continue;
+
+    existingTimetables[normCode] = sched;
+    importedClasses.push(normCode);
+
+    for (const day of Object.values(sched)) {
+      if (day && typeof day === "object") {
+        totalLessons += Object.keys(day).length;
+      }
+    }
+
+    const classExists = existingClasses.some(c => c.code.toLowerCase() === normCode.toLowerCase());
+    if (!classExists) {
+      const grade = parseInt(normCode, 10) || 5;
+      const branchChar = normCode.slice(-1).toUpperCase();
+      let branch = "Realschule";
+      if (branchChar === "H") branch = "Hauptschule";
+      else if (branchChar === "G") branch = "Gymnasium";
+
+      existingClasses.push({
+        code: normCode,
+        grade,
+        branch,
+        teacher: "",
+        room: ""
+      });
+      classesCreated++;
+    }
+  }
+
+  if (importedClasses.length === 0) {
+    return res.status(400).json({ error: "Keine gültigen Stundenplandaten im JSON gefunden." });
+  }
+
+  writeData(TIMETABLES_FILE, existingTimetables);
+  if (classesCreated > 0) {
+    writeData(CLASSES_FILE, existingClasses);
+  }
+
+  return res.json({
+    success: true,
+    message: `${importedClasses.length} Stundenplan/Stundenpläne erfolgreich importiert (${totalLessons} Unterrichtsstunden).`,
+    importedClasses,
+    totalLessons,
+    classesCreated
+  });
 });
 
 // --- STUDENT DASHBOARD (SCHÜLERPORTAL) ---

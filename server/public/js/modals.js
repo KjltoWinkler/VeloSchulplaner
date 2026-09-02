@@ -22,24 +22,30 @@ export let subDialog;
 export let confirmDeleteDialog;
 export let classDialog;
 export let lessonDialog;
+export let importTimetableDialog;
 
 let onConfirmDeleteCallback = null;
 let onClassSavedCallback = null;
 let onLessonSavedCallback = null;
+let onTimetableImportedCallback = null;
 let getUsersListCallback = null;
 let getClassesListCallback = null;
 let currentEditingClass = null;
 let currentEditingLesson = null;
+let currentImportClass = '';
+let parsedImportData = null;
 
-export function initModals({ onUserSaved, onSubSaved, onClassSaved, onLessonSaved, getUsersList, getClassesList }) {
+export function initModals({ onUserSaved, onSubSaved, onClassSaved, onLessonSaved, onTimetableImported, getUsersList, getClassesList }) {
   userDialog = createM3Modal('addUserModal');
   editUserDialog = createM3Modal('editUserModal');
   subDialog = createM3Modal('addSubModal');
   confirmDeleteDialog = createM3Modal('confirmDeleteModal');
   classDialog = createM3Modal('classModal');
   lessonDialog = createM3Modal('lessonModal');
+  importTimetableDialog = createM3Modal('importTimetableModal');
   onClassSavedCallback = onClassSaved;
   onLessonSavedCallback = onLessonSaved;
+  onTimetableImportedCallback = onTimetableImported;
   getUsersListCallback = getUsersList;
   getClassesListCallback = getClassesList;
 
@@ -440,6 +446,239 @@ export function initModals({ onUserSaved, onSubSaved, onClassSaved, onLessonSave
       lessonDialog.close();
     });
   }
+
+  // --- IMPORT TIMETABLES MODAL HANDLERS ---
+  const closeImportBtn = document.getElementById('closeImportTimetableModal');
+  if (closeImportBtn) closeImportBtn.addEventListener('click', () => importTimetableDialog.close());
+
+  const dropZone = document.getElementById('importTimetableDropZone');
+  const fileInput = document.getElementById('importTimetableFileInput');
+  const jsonTextarea = document.getElementById('importTimetableJsonText');
+  const previewBanner = document.getElementById('importTimetablePreview');
+  const importErrorBanner = document.getElementById('importTimetableError');
+  const submitImportBtn = document.getElementById('submitImportTimetableBtn');
+  const targetClassSelect = document.getElementById('importTimetableTargetClass');
+  const downloadTemplateBtn = document.getElementById('downloadTimetableTemplateBtn');
+
+  function validateImportJson() {
+    parsedImportData = null;
+    if (importErrorBanner) {
+      importErrorBanner.style.display = 'none';
+      importErrorBanner.textContent = '';
+    }
+    if (previewBanner) {
+      previewBanner.style.display = 'none';
+      previewBanner.innerHTML = '';
+    }
+    if (submitImportBtn) submitImportBtn.disabled = true;
+
+    const raw = jsonTextarea ? jsonTextarea.value.trim() : '';
+    if (!raw) return;
+
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch (e) {
+      if (importErrorBanner) {
+        importErrorBanner.textContent = `JSON-Syntaxfehler: ${e.message}`;
+        importErrorBanner.style.display = 'block';
+      }
+      return;
+    }
+
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      if (importErrorBanner) {
+        importErrorBanner.textContent = 'JSON muss ein Objekt mit Klassen- oder Wochentag-Strukturen sein.';
+        importErrorBanner.style.display = 'block';
+      }
+      return;
+    }
+
+    const dayNames = ['montag', 'dienstag', 'mittwoch', 'donnerstag', 'freitag', 'samstag', 'sonntag'];
+    const keys = Object.keys(parsed);
+    const isSingleClass = keys.some(k => dayNames.includes(k.toLowerCase()));
+
+    let classesDetected = [];
+    let lessonCount = 0;
+
+    if (isSingleClass) {
+      const targetVal = targetClassSelect ? targetClassSelect.value : 'auto';
+      const targetCode = targetVal !== 'auto' ? targetVal : (currentImportClass || 'Aktuelle Klasse');
+      classesDetected.push(targetCode);
+      for (const day of Object.values(parsed)) {
+        if (day && typeof day === 'object') {
+          lessonCount += Object.keys(day).length;
+        }
+      }
+    } else {
+      for (const [cls, sched] of Object.entries(parsed)) {
+        if (sched && typeof sched === 'object') {
+          classesDetected.push(normalizeClassCode(cls));
+          for (const day of Object.values(sched)) {
+            if (day && typeof day === 'object') {
+              lessonCount += Object.keys(day).length;
+            }
+          }
+        }
+      }
+    }
+
+    if (classesDetected.length === 0 || lessonCount === 0) {
+      if (importErrorBanner) {
+        importErrorBanner.textContent = 'Keine Unterrichtsstunden im JSON gefunden.';
+        importErrorBanner.style.display = 'block';
+      }
+      return;
+    }
+
+    parsedImportData = {
+      isSingleClass,
+      data: parsed
+    };
+
+    if (previewBanner) {
+      previewBanner.innerHTML = `<span class="material-symbols-outlined" style="vertical-align:middle; font-size:18px; margin-right:4px;">check_circle</span> ` +
+        `<strong>Gültiges Format erkannt:</strong> ${classesDetected.length} Klasse(n) (${classesDetected.slice(0, 5).join(', ')}${classesDetected.length > 5 ? '...' : ''}) mit ${lessonCount} Unterrichtsstunden.`;
+      previewBanner.style.display = 'block';
+    }
+
+    if (submitImportBtn) submitImportBtn.disabled = false;
+  }
+
+  function handleImportFile(file) {
+    if (!file.name.toLowerCase().endsWith('.json')) {
+      showToast('Bitte wähle eine Datei mit der Endung .json aus.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (jsonTextarea) {
+        jsonTextarea.value = event.target.result;
+        validateImportJson();
+      }
+    };
+    reader.readAsText(file, 'UTF-8');
+  }
+
+  if (dropZone && fileInput) {
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.style.borderColor = 'var(--md-sys-color-primary)';
+      dropZone.style.background = 'var(--md-sys-color-surface-container)';
+    });
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.style.borderColor = 'var(--md-sys-color-outline-variant)';
+      dropZone.style.background = 'var(--md-sys-color-surface-container-low)';
+    });
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.style.borderColor = 'var(--md-sys-color-outline-variant)';
+      dropZone.style.background = 'var(--md-sys-color-surface-container-low)';
+      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+        handleImportFile(e.dataTransfer.files[0]);
+      }
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files && e.target.files[0]) {
+        handleImportFile(e.target.files[0]);
+      }
+    });
+  }
+
+  if (jsonTextarea) {
+    jsonTextarea.addEventListener('input', () => validateImportJson());
+  }
+
+  if (targetClassSelect) {
+    targetClassSelect.addEventListener('change', () => validateImportJson());
+  }
+
+  if (downloadTemplateBtn) {
+    downloadTemplateBtn.addEventListener('click', () => {
+      const sample = {
+        "9aR": {
+          "Montag": {
+            "1": { "subject": "Mathematik", "teacher": "Hr. Müller", "room": "R101" },
+            "2": { "subject": "Deutsch", "teacher": "Fr. Schmidt", "room": "R101" },
+            "3": { "subject": "Englisch", "teacher": "Hr. Klein", "room": "R102" }
+          },
+          "Dienstag": {
+            "1": { "subject": "Biologie", "teacher": "Fr. Weber", "room": "BIO" },
+            "2": { "subject": "Chemie", "teacher": "Hr. Koch", "room": "CH1" }
+          }
+        }
+      };
+      const blob = new Blob([JSON.stringify(sample, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'stundenplan_muster.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+  }
+
+  if (submitImportBtn) {
+    submitImportBtn.addEventListener('click', async () => {
+      if (!parsedImportData) return;
+      submitImportBtn.disabled = true;
+
+      try {
+        let payload = {};
+        const targetVal = targetClassSelect ? targetClassSelect.value : 'auto';
+
+        if (parsedImportData.isSingleClass) {
+          const targetClass = targetVal !== 'auto' ? targetVal : currentImportClass;
+          if (!targetClass) {
+            if (importErrorBanner) {
+              importErrorBanner.textContent = 'Bitte wähle eine Zielklasse für diesen Stundenplan aus.';
+              importErrorBanner.style.display = 'block';
+            }
+            submitImportBtn.disabled = false;
+            return;
+          }
+          payload = {
+            classCode: targetClass,
+            schedule: parsedImportData.data
+          };
+        } else {
+          payload = {
+            timetables: parsedImportData.data
+          };
+        }
+
+        const res = await authFetch('/api/admin/timetables/import', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          if (importErrorBanner) {
+            importErrorBanner.textContent = data.error || 'Fehler beim Importieren.';
+            importErrorBanner.style.display = 'block';
+          }
+          submitImportBtn.disabled = false;
+          return;
+        }
+
+        importTimetableDialog.close();
+        showToast(data.message || 'Stundenplan erfolgreich importiert!');
+        if (onTimetableImportedCallback) {
+          onTimetableImportedCallback(data);
+        }
+      } catch (err) {
+        if (importErrorBanner) {
+          importErrorBanner.textContent = 'Verbindungsfehler zum Server.';
+          importErrorBanner.style.display = 'block';
+        }
+        submitImportBtn.disabled = false;
+      }
+    });
+  }
 }
 
 export function openConfirmDeleteDialog(title, message, onConfirm) {
@@ -621,4 +860,40 @@ export function openLessonModal(day, period, currentData, onSave) {
   document.getElementById('inputLessonRoom').value = currentData?.room || '';
 
   lessonDialog.show();
+}
+
+export function openImportTimetableModal(selectedClass, classesList = []) {
+  currentImportClass = selectedClass || '';
+  const fileInput = document.getElementById('importTimetableFileInput');
+  if (fileInput) fileInput.value = '';
+  const jsonTextarea = document.getElementById('importTimetableJsonText');
+  if (jsonTextarea) jsonTextarea.value = '';
+  const previewBanner = document.getElementById('importTimetablePreview');
+  if (previewBanner) {
+    previewBanner.style.display = 'none';
+    previewBanner.innerHTML = '';
+  }
+  const errEl = document.getElementById('importTimetableError');
+  if (errEl) {
+    errEl.style.display = 'none';
+    errEl.textContent = '';
+  }
+  const submitBtn = document.getElementById('submitImportTimetableBtn');
+  if (submitBtn) submitBtn.disabled = true;
+
+  const targetClassSelect = document.getElementById('importTimetableTargetClass');
+  if (targetClassSelect) {
+    let opts = `<md-select-option value="auto" ${!selectedClass ? 'selected' : ''}>` +
+               `<div slot="headline">Automatisch aus JSON erkennen</div>` +
+               `</md-select-option>`;
+    classesList.forEach(c => {
+      const isSel = selectedClass && c.code.toLowerCase() === selectedClass.toLowerCase();
+      opts += `<md-select-option value="${c.code}" ${isSel ? 'selected' : ''}>` +
+              `<div slot="headline">Klasse ${c.code}</div>` +
+              `</md-select-option>`;
+    });
+    targetClassSelect.innerHTML = opts;
+  }
+
+  importTimetableDialog.show();
 }

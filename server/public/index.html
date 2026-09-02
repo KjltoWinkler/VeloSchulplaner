@@ -318,6 +318,14 @@
               <md-outlined-select id="timetableClassSelect" label="Klasse wählen" style="min-width:180px;">
                 <!-- Filled dynamically with classes -->
               </md-outlined-select>
+              <md-outlined-button id="importTimetableBtn">
+                <span slot="icon" class="material-symbols-outlined">upload_file</span>
+                Importieren
+              </md-outlined-button>
+              <md-outlined-button id="exportTimetableBtn">
+                <span slot="icon" class="material-symbols-outlined">download</span>
+                Exportieren
+              </md-outlined-button>
               <md-outlined-button id="clearTimetableBtn" style="--md-outlined-button-outline-color: rgba(242, 184, 181, 0.4); --md-outlined-button-label-text-color: var(--md-sys-color-error);">
                 <span slot="icon" class="material-symbols-outlined">delete_sweep</span>
                 Plan leeren
@@ -629,6 +637,66 @@
     </div>
   </div>
 
+  <!-- M3 MODAL: IMPORT TIMETABLES -->
+  <div id="importTimetableModal" class="m3-modal-overlay">
+    <div class="m3-dialog-card" style="max-width:580px; width:95%;">
+      <div class="m3-dialog-header">
+        <span class="material-symbols-outlined m3-dialog-icon" style="color:var(--md-sys-color-primary);">upload_file</span>
+        <h2 class="m3-dialog-title">Stundenplan importieren</h2>
+      </div>
+
+      <div class="dialog-form">
+        <div id="importTimetableError" class="modal-error-banner" style="display:none;"></div>
+
+        <p style="color:var(--md-sys-color-on-surface-variant); font-size:0.88rem; line-height:1.5;">
+          Lade eine <code>.json</code>-Datei hoch oder füge den JSON-Code direkt ein. Es können Pläne für eine einzelne Klasse oder mehrere Klassen gleichzeitig importiert werden.
+        </p>
+
+        <!-- TARGET CLASS OVERRIDE SELECTOR -->
+        <div style="margin-top:8px;">
+          <md-outlined-select id="importTimetableTargetClass" label="Zielklasse zuweisen" style="width:100%;">
+            <md-select-option value="auto" selected>
+              <div slot="headline">Automatisch aus JSON erkennen</div>
+            </md-select-option>
+          </md-outlined-select>
+        </div>
+
+        <!-- FILE UPLOAD DROPZONE -->
+        <div id="importTimetableDropZone" style="border: 2px dashed var(--md-sys-color-outline-variant); border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.2s ease; background: var(--md-sys-color-surface-container-low); margin-top: 12px;">
+          <input type="file" id="importTimetableFileInput" accept=".json,application/json" style="display:none;" />
+          <span class="material-symbols-outlined" style="font-size:36px; color:var(--md-sys-color-primary); margin-bottom:8px; display:block;">cloud_upload</span>
+          <div style="font-weight:600; font-size:0.95rem; color:var(--md-sys-color-on-surface);">JSON-Datei hier ablegen oder klicken</div>
+          <div style="font-size:0.8rem; color:var(--md-sys-color-on-surface-variant); margin-top:4px;">Unterstützt .json UTF-8</div>
+        </div>
+
+        <!-- RAW JSON TEXTAREA -->
+        <div style="margin-top:14px;">
+          <label style="display:block; font-size:0.82rem; font-weight:600; margin-bottom:6px; color:var(--md-sys-color-on-surface-variant);">
+            Oder JSON direkt einfügen:
+          </label>
+          <textarea id="importTimetableJsonText" rows="6" placeholder='{&#10;  "9aR": {&#10;    "Montag": {&#10;      "1": { "subject": "Mathematik", "teacher": "Hr. Müller", "room": "R101" }&#10;    }&#10;  }&#10;}' style="width:100%; font-family:var(--md-ref-typeface-mono, monospace); font-size:0.82rem; padding:10px; border-radius:8px; border:1px solid var(--md-sys-color-outline); background:var(--md-sys-color-surface-container-high); color:var(--md-sys-color-on-surface); resize:vertical; box-sizing:border-box; outline:none;"></textarea>
+        </div>
+
+        <!-- LIVE PREVIEW BANNER -->
+        <div id="importTimetablePreview" style="display:none; margin-top:12px; padding:10px 14px; border-radius:8px; background:var(--md-sys-color-primary-container); color:var(--md-sys-color-on-primary-container); font-size:0.85rem; font-weight:500;">
+          <!-- Populated via JS -->
+        </div>
+      </div>
+
+      <div class="m3-dialog-actions" style="margin-top:20px; flex-wrap:wrap; gap:8px;">
+        <md-text-button id="downloadTimetableTemplateBtn" style="margin-right:auto;">
+          <span slot="icon" class="material-symbols-outlined">download</span>
+          Vorlage laden
+        </md-text-button>
+        <md-outlined-button id="closeImportTimetableModal">Abbrechen</md-outlined-button>
+        <md-filled-button id="submitImportTimetableBtn" disabled>
+          <span slot="icon" class="material-symbols-outlined">upload</span>
+          Importieren & Speichern
+        </md-filled-button>
+      </div>
+    </div>
+  </div>
+
   <!-- TOAST NOTIFICATION -->
   <div id="toast" class="toast">
     <span class="material-symbols-outlined" style="font-size:20px; color:#81c995;">check_circle</span>
@@ -636,6 +704,6 @@
   </div>
 
   <!-- Application Entry Point (Modular ES6 Scripts) -->
-  <script type="module" src="/js/app.js?v=20260902_1"></script>
+  <script type="module" src="/js/app.js?v=20260902_2"></script>
 </body>
 </html>
