@@ -148,10 +148,14 @@ fun DSBApp(viewModel: MainViewModel) {
     LaunchedEffect(selectedTab) {
         showProfile = false
         if (pagerState.currentPage != selectedTab) {
-            pagerState.animateScrollToPage(
-                selectedTab,
-                animationSpec = spring(stiffness = Spring.StiffnessMediumLow, visibilityThreshold = 1f)
-            )
+            if (uiState is UiState.NeedsLogin) {
+                pagerState.scrollToPage(selectedTab)
+            } else {
+                pagerState.animateScrollToPage(
+                    selectedTab,
+                    animationSpec = spring(stiffness = Spring.StiffnessMediumLow, visibilityThreshold = 1f)
+                )
+            }
         }
     }
 
@@ -253,7 +257,8 @@ fun DSBApp(viewModel: MainViewModel) {
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.surface
     ) {
-        Row(modifier = Modifier.fillMaxSize()) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Row(modifier = Modifier.fillMaxSize()) {
             if (isTablet && showNavCondition) {
                 Box(
                     modifier = Modifier
@@ -558,8 +563,9 @@ fun DSBApp(viewModel: MainViewModel) {
                     }
                 }
             }
+        }
 
-            OverlayContent(
+        OverlayContent(
                 showThemePicker = showThemePicker,
                 showAbout = showAbout,
                 showDebug = showDebug,
@@ -805,12 +811,14 @@ fun OverlayContent(
     onLogin: (String, String) -> Unit,
     onLoginDemo: () -> Unit,
     customServerUrl: String? = null,
-    onSetCustomServerUrl: (String) -> Unit = {}
+    onSetCustomServerUrl: (String) -> Unit = {},
+    modifier: Modifier = Modifier
 ) {
     androidx.compose.animation.AnimatedVisibility(
         visible = showThemePicker || showAbout || showDebug || showCalendar || shareCardDay != null || uiState is UiState.NeedsLogin || uiState is UiState.Loading || uiState is UiState.SelectingClass,
         enter = fadeIn(tween(300)) + scaleIn(initialScale = 0.92f, animationSpec = tween(300)),
-        exit = fadeOut(tween(250)) + scaleOut(targetScale = 0.92f, animationSpec = tween(250))
+        exit = fadeOut(tween(250)) + scaleOut(targetScale = 0.92f, animationSpec = tween(250)),
+        modifier = modifier.fillMaxSize()
     ) {
         when {
             shareCardDay != null -> ShareCardScreen(

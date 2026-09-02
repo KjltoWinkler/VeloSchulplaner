@@ -24,6 +24,7 @@ import {
   openSubModal,
   openConfirmDeleteDialog,
   openClassModal,
+  openClassDetailModal,
   openLessonModal,
   openImportTimetableModal
 } from './modals.js';
@@ -496,15 +497,21 @@ function renderClasses() {
 
   classesList.forEach(c => {
     const tr = document.createElement('tr');
+    tr.className = 'clickable-row';
+    tr.style.cursor = 'pointer';
+    tr.title = `Klicke, um Schüler & Details von Klasse ${c.code} anzuzeigen`;
     tr.innerHTML = `
       <td><span class="class-chip" style="font-size:0.9rem;">${c.code}</span></td>
       <td><strong>${c.grade || '—'}</strong></td>
       <td><span class="role-badge role-schueler">${c.branch || 'Realschule'}</span></td>
       <td>${c.teacher || '—'}</td>
       <td>${c.room ? `<strong style="color:var(--md-sys-color-primary);">${c.room}</strong>` : '—'}</td>
-      <td><strong>${c.studentCount || 0}</strong> Schüler</td>
+      <td><span class="class-chip" style="background:var(--md-sys-color-surface-container); font-size:0.85rem;"><span class="material-symbols-outlined" style="font-size:16px; vertical-align:middle; margin-right:4px;">group</span>${c.studentCount || 0}</span></td>
       <td>
-        <div class="row-actions">
+        <div class="row-actions" onclick="event.stopPropagation();">
+          <md-icon-button class="btn-detail-class" data-code="${c.code}" title="Schüler & Details anzeigen">
+            <span class="material-symbols-outlined" style="color:var(--md-sys-color-primary);">group</span>
+          </md-icon-button>
           <md-outlined-button class="btn-open-timetable" data-code="${c.code}" title="Stundenplan dieser Klasse öffnen">
             <span slot="icon" class="material-symbols-outlined">schedule</span>
             Stundenplan
@@ -518,11 +525,27 @@ function renderClasses() {
         </div>
       </td>
     `;
+
+    tr.addEventListener('click', (e) => {
+      if (e.target.closest('.row-actions')) return;
+      openClassDetailModal(c);
+    });
+
     tbody.appendChild(tr);
   });
 
+  tbody.querySelectorAll('.btn-detail-class').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const code = btn.getAttribute('data-code');
+      const item = classesList.find(c => c.code === code);
+      if (item) openClassDetailModal(item);
+    });
+  });
+
   tbody.querySelectorAll('.btn-open-timetable').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
       const code = btn.getAttribute('data-code');
       selectedTimetableClass = code;
       const sel = document.getElementById('timetableClassSelect');
@@ -533,7 +556,8 @@ function renderClasses() {
   });
 
   tbody.querySelectorAll('.btn-edit-class').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
       const code = btn.getAttribute('data-code');
       const item = classesList.find(c => c.code === code);
       if (item) openClassModal(item);
@@ -804,6 +828,13 @@ export function initApp() {
         if (selectEl) selectEl.value = selectedTimetableClass;
         await loadTimetableForClass(selectedTimetableClass);
       }
+    },
+    onOpenTimetable: (classCode) => {
+      selectedTimetableClass = classCode;
+      const selectEl = document.getElementById('timetableClassSelect');
+      if (selectEl) selectEl.value = classCode;
+      loadTimetableForClass(classCode);
+      navigateTo('/stundenplaene');
     },
     getUsersList: () => usersList,
     getClassesList: () => classesList

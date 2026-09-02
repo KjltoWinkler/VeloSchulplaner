@@ -21,31 +21,38 @@ export let editUserDialog;
 export let subDialog;
 export let confirmDeleteDialog;
 export let classDialog;
+export let classDetailDialog;
 export let lessonDialog;
 export let importTimetableDialog;
 
+let onUserSavedCallback = null;
 let onConfirmDeleteCallback = null;
 let onClassSavedCallback = null;
 let onLessonSavedCallback = null;
 let onTimetableImportedCallback = null;
+let onOpenTimetableCallback = null;
 let getUsersListCallback = null;
 let getClassesListCallback = null;
 let currentEditingClass = null;
+let currentDetailClass = null;
 let currentEditingLesson = null;
 let currentImportClass = '';
 let parsedImportData = null;
 
-export function initModals({ onUserSaved, onSubSaved, onClassSaved, onLessonSaved, onTimetableImported, getUsersList, getClassesList }) {
+export function initModals({ onUserSaved, onSubSaved, onClassSaved, onLessonSaved, onTimetableImported, onOpenTimetable, getUsersList, getClassesList }) {
   userDialog = createM3Modal('addUserModal');
   editUserDialog = createM3Modal('editUserModal');
   subDialog = createM3Modal('addSubModal');
   confirmDeleteDialog = createM3Modal('confirmDeleteModal');
   classDialog = createM3Modal('classModal');
+  classDetailDialog = createM3Modal('classDetailModal');
   lessonDialog = createM3Modal('lessonModal');
   importTimetableDialog = createM3Modal('importTimetableModal');
+  onUserSavedCallback = onUserSaved;
   onClassSavedCallback = onClassSaved;
   onLessonSavedCallback = onLessonSaved;
   onTimetableImportedCallback = onTimetableImported;
+  onOpenTimetableCallback = onOpenTimetable;
   getUsersListCallback = getUsersList;
   getClassesListCallback = getClassesList;
 
@@ -679,6 +686,97 @@ export function initModals({ onUserSaved, onSubSaved, onClassSaved, onLessonSave
       }
     });
   }
+
+  // --- CLASS DETAIL MODAL HANDLERS ---
+  const closeDetailBtn = document.getElementById('closeClassDetailModal');
+  const closeDetailTopBtn = document.getElementById('closeClassDetailModalTop');
+  if (closeDetailBtn) closeDetailBtn.addEventListener('click', () => classDetailDialog.close());
+  if (closeDetailTopBtn) closeDetailTopBtn.addEventListener('click', () => classDetailDialog.close());
+
+  const openAddStudentBtn = document.getElementById('openAddStudentToClassBtn');
+  const addStudentContainer = document.getElementById('addStudentToClassContainer');
+  if (openAddStudentBtn && addStudentContainer) {
+    openAddStudentBtn.addEventListener('click', () => {
+      const isVisible = addStudentContainer.style.display === 'block';
+      addStudentContainer.style.display = isVisible ? 'none' : 'block';
+      if (!isVisible) {
+        populateExistingStudentsDropdown();
+      }
+    });
+  }
+
+  const btnAssignExisting = document.getElementById('btnAssignExistingStudent');
+  if (btnAssignExisting) {
+    btnAssignExisting.addEventListener('click', async () => {
+      const select = document.getElementById('assignExistingStudentSelect');
+      const username = select ? select.value : '';
+      if (!username || !currentDetailClass) return;
+
+      btnAssignExisting.disabled = true;
+      try {
+        const res = await authFetch(`/api/admin/classes/${encodeURIComponent(currentDetailClass.code)}/students`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showToast(data.message || 'Schüler zugewiesen.');
+          if (addStudentContainer) addStudentContainer.style.display = 'none';
+          await refreshClassDetailStudents();
+          if (onUserSavedCallback) onUserSavedCallback();
+          if (onClassSavedCallback) onClassSavedCallback();
+        } else {
+          showToast(data.error || 'Fehler beim Zuweisen.');
+        }
+      } catch (err) {
+        showToast('Verbindungsfehler.');
+      } finally {
+        btnAssignExisting.disabled = false;
+      }
+    });
+  }
+
+  const btnCreateNewStudent = document.getElementById('btnCreateNewStudentForClass');
+  if (btnCreateNewStudent) {
+    btnCreateNewStudent.addEventListener('click', () => {
+      if (!currentDetailClass) return;
+      const targetCode = currentDetailClass.code;
+      classDetailDialog.close();
+      openUserModal();
+      const roleField = document.getElementById('inputRole');
+      const classField = document.getElementById('inputClass');
+      const classGroup = document.getElementById('classInputGroup');
+      if (roleField) roleField.value = 'schueler';
+      if (classGroup) classGroup.style.display = 'block';
+      if (classField) {
+        classField.value = targetCode;
+        classField.setAttribute('required', 'true');
+      }
+    });
+  }
+
+  const classDetailOpenTimetableBtn = document.getElementById('classDetailOpenTimetableBtn');
+  if (classDetailOpenTimetableBtn) {
+    classDetailOpenTimetableBtn.addEventListener('click', () => {
+      if (!currentDetailClass) return;
+      const code = currentDetailClass.code;
+      classDetailDialog.close();
+      if (onOpenTimetableCallback) {
+        onOpenTimetableCallback(code);
+      }
+    });
+  }
+
+  const classDetailEditClassBtn = document.getElementById('classDetailEditClassBtn');
+  if (classDetailEditClassBtn) {
+    classDetailEditClassBtn.addEventListener('click', () => {
+      if (!currentDetailClass) return;
+      const cls = currentDetailClass;
+      classDetailDialog.close();
+      openClassModal(cls);
+    });
+  }
 }
 
 export function openConfirmDeleteDialog(title, message, onConfirm) {
@@ -896,4 +994,104 @@ export function openImportTimetableModal(selectedClass, classesList = []) {
   }
 
   importTimetableDialog.show();
+}
+
+function populateExistingStudentsDropdown() {
+  const select = document.getElementById('assignExistingStudentSelect');
+  if (!select) return;
+  const allUsers = getUsersListCallback ? getUsersListCallback() : [];
+  const currCode = currentDetailClass ? currentDetailClass.code.toLowerCase() : '';
+  
+  const candidates = allUsers.filter(u => u.role === 'schueler' && (u.assignedClass || '').toLowerCase() !== currCode);
+
+  if (candidates.length === 0) {
+    select.innerHTML = `<md-select-option value="" disabled selected><div slot="headline">Keine weiteren Schüler vorhanden</div></md-select-option>`;
+    return;
+  }
+
+  let html = `<md-select-option value="" selected><div slot="headline">Schüler auswählen...</div></md-select-option>`;
+  candidates.forEach(u => {
+    const classInfo = u.assignedClass ? ` (derzeit ${u.assignedClass})` : ' (noch ohne Klasse)';
+    html += `<md-select-option value="${u.username}"><div slot="headline">${u.name || u.username} (@${u.username})${classInfo}</div></md-select-option>`;
+  });
+  select.innerHTML = html;
+}
+
+async function refreshClassDetailStudents() {
+  if (!currentDetailClass) return;
+  const tbody = document.getElementById('classDetailStudentsBody');
+  const countEl = document.getElementById('classDetailStudentCount');
+  if (!tbody) return;
+
+  tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:16px; color:var(--md-sys-color-outline);">Lade Schüler...</td></tr>`;
+
+  try {
+    const res = await authFetch(`/api/admin/classes/${encodeURIComponent(currentDetailClass.code)}/students`);
+    const students = await res.json();
+
+    if (countEl) countEl.textContent = `${students.length} Schüler`;
+
+    if (!students || students.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:24px; color:var(--md-sys-color-outline);">Noch keine Schüler in dieser Klasse. Klicke oben auf „Schüler hinzufügen“.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = '';
+    students.forEach(s => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><strong>${s.name || s.username}</strong></td>
+        <td><code>@${s.username}</code></td>
+        <td><span style="font-family:monospace; font-size:0.85rem; color:var(--md-sys-color-primary);">${s.initialPassword || '••••••••'}</span></td>
+        <td style="text-align:right;">
+          <md-icon-button class="btn-remove-student-from-class" data-username="${s.username}" title="Aus Klasse entfernen">
+            <span class="material-symbols-outlined" style="color:var(--md-sys-color-error); font-size:20px;">person_remove</span>
+          </md-icon-button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    tbody.querySelectorAll('.btn-remove-student-from-class').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const username = btn.getAttribute('data-username');
+        openConfirmDeleteDialog(
+          `Schüler aus Klasse entfernen?`,
+          `Möchtest du "${username}" wirklich aus Klasse ${currentDetailClass.code} entfernen? Das Benutzerkonto bleibt erhalten.`,
+          async () => {
+            await authFetch(`/api/admin/classes/${encodeURIComponent(currentDetailClass.code)}/students/${encodeURIComponent(username)}`, {
+              method: 'DELETE'
+            });
+            showToast(`Schüler "${username}" aus der Klasse entfernt.`);
+            await refreshClassDetailStudents();
+            if (onUserSavedCallback) onUserSavedCallback();
+            if (onClassSavedCallback) onClassSavedCallback();
+          }
+        );
+      });
+    });
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:16px; color:var(--md-sys-color-error);">Fehler beim Laden der Schüler.</td></tr>`;
+  }
+}
+
+export async function openClassDetailModal(classItem) {
+  currentDetailClass = classItem;
+
+  const titleEl = document.getElementById('classDetailTitle');
+  const subEl = document.getElementById('classDetailSubtitle');
+  const teacherEl = document.getElementById('classDetailTeacher');
+  const roomEl = document.getElementById('classDetailRoom');
+  const countEl = document.getElementById('classDetailStudentCount');
+  const addContainer = document.getElementById('addStudentToClassContainer');
+
+  if (titleEl) titleEl.textContent = `Klasse ${classItem.code}`;
+  if (subEl) subEl.textContent = `${classItem.branch || 'Realschule'} • ${classItem.grade || '—'}. Schuljahr`;
+  if (teacherEl) teacherEl.textContent = classItem.teacher || 'Keine Klassenleitung';
+  if (roomEl) roomEl.textContent = classItem.room || 'Kein Stammraum';
+  if (countEl) countEl.textContent = `${classItem.studentCount || 0} Schüler`;
+  if (addContainer) addContainer.style.display = 'none';
+
+  classDetailDialog.show();
+  await refreshClassDetailStudents();
 }

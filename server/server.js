@@ -484,14 +484,13 @@ app.post("/api/admin/users", requireAdmin, (req, res) => {
 
   let cleanClass = "";
   if (cleanRole === "schueler") {
-    if (!assignedClass) {
-      return res.status(400).json({ error: "Für Schüler muss eine Klasse (z. B. 9aR) angegeben werden." });
-    }
-    cleanClass = normalizeClassCode(assignedClass);
-    if (!isValidClassCode(cleanClass)) {
-      return res.status(400).json({
-        error: `Ungültiges Klassenkürzel "${assignedClass}". Format: [Klassenstufe][a/b/c...][H/R], z. B. 9aR, 8bH.`
-      });
+    if (assignedClass) {
+      cleanClass = normalizeClassCode(assignedClass);
+      if (!isValidClassCode(cleanClass)) {
+        return res.status(400).json({
+          error: `Ungültiges Klassenkürzel "${assignedClass}". Format: [Klassenstufe][a/b/c...][H/R], z. B. 9aR, 8bH.`
+        });
+      }
     }
   } else if (assignedClass) {
     cleanClass = normalizeClassCode(assignedClass);
@@ -716,6 +715,57 @@ app.delete("/api/admin/classes/:code", requireAdmin, (req, res) => {
 
   writeData(CLASSES_FILE, classes);
   res.json({ success: true, message: "Klasse gelöscht." });
+});
+
+// --- CLASS STUDENTS MANAGEMENT ---
+app.get("/api/admin/classes/:code/students", requireAdmin, (req, res) => {
+  const codeParam = normalizeClassCode(req.params.code).toLowerCase();
+  const users = readData(USERS_FILE, defaultUsers);
+  const students = users
+    .filter(u => u.role === "schueler" && normalizeClassCode(u.assignedClass || "").toLowerCase() === codeParam)
+    .map(u => ({
+      username: u.username,
+      name: u.name || u.username,
+      role: u.role,
+      assignedClass: u.assignedClass || "",
+      initialPassword: u.initialPassword || ""
+    }));
+  res.json(students);
+});
+
+app.post("/api/admin/classes/:code/students", requireAdmin, (req, res) => {
+  const codeParam = normalizeClassCode(req.params.code);
+  const { username } = req.body || {};
+  if (!username) {
+    return res.status(400).json({ error: "Benutzername erforderlich." });
+  }
+
+  const users = readData(USERS_FILE, defaultUsers);
+  const user = users.find(u => u.username.toLowerCase() === username.trim().toLowerCase());
+  if (!user) {
+    return res.status(404).json({ error: "Benutzer nicht gefunden." });
+  }
+
+  user.assignedClass = codeParam;
+  if (user.role !== "schueler" && user.role !== "admin") {
+    user.role = "schueler";
+  }
+
+  writeData(USERS_FILE, users);
+  res.json({ success: true, message: `Schüler "${user.name || user.username}" zu Klasse ${codeParam} hinzugefügt.` });
+});
+
+app.delete("/api/admin/classes/:code/students/:username", requireAdmin, (req, res) => {
+  const usernameParam = req.params.username.toLowerCase();
+  const users = readData(USERS_FILE, defaultUsers);
+  const user = users.find(u => u.username.toLowerCase() === usernameParam);
+  if (!user) {
+    return res.status(404).json({ error: "Benutzer nicht gefunden." });
+  }
+
+  user.assignedClass = "";
+  writeData(USERS_FILE, users);
+  res.json({ success: true, message: `Schüler "${user.name || user.username}" aus der Klasse entfernt.` });
 });
 
 // --- TIMETABLES (STUNDENPLÄNE) ---

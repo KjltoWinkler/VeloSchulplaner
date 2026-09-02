@@ -701,9 +701,8 @@ md-elevated-button,
 md-text-button {
   font-family: var(--md-ref-typeface-plain);
   font-weight: 500;
-  font-size: 0.92rem;
+  font-size: 0.95rem;
   letter-spacing: 0.15px;
-  padding: initial; /* Ensure browser reset never clips custom element padding */
   white-space: nowrap;
 
   --md-filled-button-container-shape: 9999px;
@@ -712,12 +711,19 @@ md-text-button {
   --md-elevated-button-container-shape: 9999px;
   --md-text-button-container-shape: 9999px;
 
-  /* Generous height: 44px default */
-  --md-filled-button-container-height: 44px;
-  --md-filled-tonal-button-container-height: 44px;
-  --md-outlined-button-container-height: 44px;
-  --md-elevated-button-container-height: 44px;
-  --md-text-button-container-height: 44px;
+  /* Generous height: 48px default */
+  --md-filled-button-container-height: 48px;
+  --md-filled-tonal-button-container-height: 48px;
+  --md-outlined-button-container-height: 48px;
+  --md-elevated-button-container-height: 48px;
+  --md-text-button-container-height: 48px;
+
+  /* Icon sizes */
+  --md-filled-button-icon-size: 20px;
+  --md-filled-tonal-button-icon-size: 20px;
+  --md-outlined-button-icon-size: 20px;
+  --md-elevated-button-icon-size: 20px;
+  --md-text-button-icon-size: 20px;
 
   /* Generous horizontal padding so text never overflows */
   --md-filled-button-leading-space: 24px;
@@ -735,10 +741,10 @@ md-text-button {
   --md-outlined-button-with-leading-icon-leading-space: 18px;
   --md-outlined-button-with-leading-icon-trailing-space: 24px;
 
-  --md-text-button-leading-space: 16px;
-  --md-text-button-trailing-space: 16px;
-  --md-text-button-with-leading-icon-leading-space: 14px;
-  --md-text-button-with-leading-icon-trailing-space: 18px;
+  --md-text-button-leading-space: 18px;
+  --md-text-button-trailing-space: 18px;
+  --md-text-button-with-leading-icon-leading-space: 16px;
+  --md-text-button-with-leading-icon-trailing-space: 20px;
 
   transition: transform 0.1s ease, box-shadow 0.15s ease, background-color 0.15s ease;
 }
@@ -750,7 +756,7 @@ md-outlined-button {
   --md-outlined-button-label-text-color: var(--md-sys-color-primary, #a8c7fa);
 }
 
-/* Authentic M3 Text Button with pill hover state (Image 3) */
+/* Authentic M3 Text Button with pill hover state */
 md-text-button {
   border-radius: 9999px;
 }
@@ -765,24 +771,24 @@ md-filled-tonal-button .material-symbols-outlined,
 md-outlined-button .material-symbols-outlined,
 md-elevated-button .material-symbols-outlined,
 md-text-button .material-symbols-outlined {
-  font-size: 20px !important;
+  font-size: 20px;
   line-height: 1;
 }
 
 /* Specific button styles */
 .canvas-header md-filled-button {
-  --md-filled-button-container-height: 44px;
+  --md-filled-button-container-height: 48px;
   font-weight: 500;
   font-size: 0.95rem;
 }
 
 .btn-open-timetable {
-  --md-outlined-button-container-height: 38px;
-  --md-outlined-button-leading-space: 18px;
-  --md-outlined-button-trailing-space: 18px;
-  --md-outlined-button-with-leading-icon-leading-space: 14px;
-  --md-outlined-button-with-leading-icon-trailing-space: 18px;
-  font-size: 0.88rem;
+  --md-outlined-button-container-height: 42px;
+  --md-outlined-button-leading-space: 20px;
+  --md-outlined-button-trailing-space: 20px;
+  --md-outlined-button-with-leading-icon-leading-space: 16px;
+  --md-outlined-button-with-leading-icon-trailing-space: 20px;
+  font-size: 0.92rem;
 }
 
 /* TIMETABLE WEEKLY GRID (M3 STYLE) */

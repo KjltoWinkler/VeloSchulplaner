@@ -187,6 +187,17 @@ class DataStoreManager(private val context: Context) {
     }
 
     suspend fun clearCredentials() {
-        context.dataStore.edit { it.clear() }
+        context.dataStore.edit {
+            it.remove(USERNAME)
+            it.remove(PASSWORD)
+            it.remove(CLASS_NAME)
+            it.remove(USER_ROLE)
+            it.remove(USER_DISPLAY_NAME)
+            it.remove(AUTH_TOKEN)
+            it.remove(SELECTED_CLASSES)
+            it.remove(CACHED_ENTRIES)
+            it.remove(CACHED_TIMETABLE)
+            it.remove(LAST_UPDATED)
+        }
     }
 }
