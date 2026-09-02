@@ -362,8 +362,8 @@ app.get("/api/health", (req, res) => {
 });
 
 // --- AUTH ENDPOINTS ---
-app.post("/api/auth/login", loginLimiter, (req, res) => {
-  const { username, password } = req.body;
+const handleLogin = (req, res) => {
+  const { username, password } = req.body || {};
   if (!username || !password) {
     return res.status(400).json({ error: "Benutzername und Passwort sind erforderlich." });
   }
@@ -395,13 +395,10 @@ app.post("/api/auth/login", loginLimiter, (req, res) => {
     },
     token
   });
-});
+};
 
-// Alias for convenience
-app.post("/api/login", loginLimiter, (req, res, next) => {
-  req.url = "/api/auth/login";
-  app.handle(req, res, next);
-});
+app.post("/api/auth/login", loginLimiter, handleLogin);
+app.post("/api/login", loginLimiter, handleLogin);
 
 app.get("/api/auth/me", requireAuth, (req, res) => {
   res.json({

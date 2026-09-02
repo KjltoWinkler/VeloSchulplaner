@@ -286,10 +286,17 @@ export function initModals({ onUserSaved, onSubSaved, onClassSaved, onLessonSave
       errEl.style.display = 'block';
     }
   });
+  }
 
   // --- CLASS MODAL HANDLERS ---
   const closeClassBtn = document.getElementById('closeClassModal');
-  if (closeClassBtn) closeClassBtn.addEventListener('click', () => classDialog.close());
+  if (closeClassBtn) {
+    closeClassBtn.addEventListener('click', () => {
+      const tm = document.getElementById('classTeacherMenu');
+      if (tm) tm.open = false;
+      classDialog.close();
+    });
+  }
 
   const inputClassCode = document.getElementById('inputClassCode');
   const classModalNotice = document.getElementById('classModalNotice');
@@ -397,14 +404,6 @@ export function initModals({ onUserSaved, onSubSaved, onClassSaved, onLessonSave
     teacherInput.addEventListener('focus', () => {
       populateTeacherMenu(teacherInput.value);
       teacherMenu.open = true;
-    });
-  }
-
-  const closeClassBtn = document.getElementById('closeClassModal');
-  if (closeClassBtn) {
-    closeClassBtn.addEventListener('click', () => {
-      if (teacherMenu) teacherMenu.open = false;
-      classDialog.close();
     });
   }
 

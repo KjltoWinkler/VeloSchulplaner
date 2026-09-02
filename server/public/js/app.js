@@ -920,8 +920,8 @@ export function initApp() {
   async function performLogin() {
     clearLoginFieldErrors();
 
-    const username = (usernameField?.value || '').trim();
-    const password = (passwordField?.value || '').trim();
+    const username = (usernameField?.value || usernameField?.shadowRoot?.querySelector('input')?.value || '').trim();
+    const password = (passwordField?.value || passwordField?.shadowRoot?.querySelector('input')?.value || '').trim();
 
     if (!username) {
       if (usernameField) {
@@ -940,6 +940,8 @@ export function initApp() {
       }
       return;
     }
+
+    if (loginSubmitBtn) loginSubmitBtn.disabled = true;
 
     try {
       const res = await fetch('/api/login', {
@@ -974,12 +976,43 @@ export function initApp() {
         usernameField.error = true;
         usernameField.errorText = 'Verbindung zum Server fehlgeschlagen.';
       }
+    } finally {
+      if (loginSubmitBtn) loginSubmitBtn.disabled = false;
     }
   }
 
-  if (loginSubmitBtn) loginSubmitBtn.addEventListener('click', performLogin);
-  if (loginForm) loginForm.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') performLogin();
+  if (loginSubmitBtn) {
+    loginSubmitBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      performLogin();
+    });
+  }
+
+  if (loginForm) {
+    loginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      performLogin();
+    });
+    loginForm.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        performLogin();
+      }
+    });
+  }
+
+  usernameField?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      passwordField ? passwordField.focus() : performLogin();
+    }
+  });
+
+  passwordField?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      performLogin();
+    }
   });
 
   window.addEventListener('app:unauthorized', () => {
